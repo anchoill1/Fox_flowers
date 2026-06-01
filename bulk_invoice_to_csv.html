@@ -88,6 +88,11 @@
     <p class="tip">Your key stays in your browser and is sent only directly to Anthropic.</p>
     <div style="margin-top:0.75rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <button class="btn btn-outline" onclick="checkModels()">Check available models</button>
+      <select id="model-select" style="margin-bottom:0;width:auto;font-size:0.78rem;">
+        <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (fastest/cheapest)</option>
+        <option value="claude-sonnet-4-5-20250929" selected>claude-sonnet-4-5 (recommended)</option>
+        <option value="claude-opus-4-5-20251101">claude-opus-4-5 (most capable)</option>
+      </select>
       <span id="models-out" style="font-size:0.78rem;font-family:'Courier New',monospace;color:#555;"></span>
     </div>
   </div>
@@ -229,8 +234,10 @@ async function checkModels() {
     });
     const data = await res.json();
     if (!res.ok) { out.textContent = 'Error: ' + (data?.error?.message || res.status); return; }
-    const names = (data.data || []).map(m => m.id).join(', ');
-    out.textContent = 'Available: ' + (names || 'none found');
+    const models = (data.data || []).map(m => m.id);
+    const sel = document.getElementById('model-select');
+    sel.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
+    out.textContent = models.length + ' models loaded';
   } catch(e) {
     out.textContent = 'Network error: ' + e.message;
   }
@@ -288,7 +295,7 @@ Return ONLY the raw JSON array. No markdown. No code fences. No explanation.`;
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: document.getElementById('model-select').value || 'claude-sonnet-4-5-20250929',
         max_tokens: 1000,
         messages: [{ role: 'user', content: [
           { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
