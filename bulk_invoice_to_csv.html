@@ -40,6 +40,12 @@
   .photo-card .overlay.processing { color: #f0c060; }
   .photo-card .overlay.done { color: #5dca90; }
   .photo-card .overlay.error { color: #f09595; }
+  .error-detail { font-size: 10px; color: #f09595; margin-top: 3px; word-break: break-word; line-height: 1.3; }
+  .error-log { background: #fff8f8; border: 1px solid #f7c1c1; border-radius: 8px; padding: 1rem; margin-top: 1rem; }
+  .error-log h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #c0392b; font-family: 'Courier New', monospace; font-weight: normal; margin-bottom: 0.75rem; }
+  .error-item { font-size: 0.8rem; font-family: 'Courier New', monospace; color: #c0392b; padding: 4px 0; border-bottom: 1px solid #f7c1c1; }
+  .error-item:last-child { border-bottom: none; }
+  .error-item strong { color: #1a1a1a; }
   .photo-card .remove-btn { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
   .progress-bar-wrap { background: #f0ede8; border-radius: 20px; height: 8px; margin: 1rem 0 0.5rem; overflow: hidden; }
   .progress-bar { height: 8px; background: #1a1a1a; border-radius: 20px; transition: width 0.3s; }
@@ -117,6 +123,8 @@
     <p class="status-msg" id="status-msg"></p>
   </div>
 
+  <div id="error-log"></div>
+
   <div id="results-section" style="display:none;" class="card">
     <div style="display:flex; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:8px;">
       <span style="font-size:0.9rem; font-weight:500;">Extracted data</span>
@@ -181,19 +189,19 @@ function renderPhotoGrid() {
     div.className = 'photo-card';
     div.innerHTML = `
       <img src="${p.url}" alt="Invoice photo">
-      <div class="overlay ${p.status}">${statusLabel(p.status)}</div>
+      <div class="overlay ${p.status}">${statusLabel(p)}</div>
       ${p.status === 'pending' ? `<button class="remove-btn" onclick="removePhoto(${p.id})" title="Remove">✕</button>` : ''}
     `;
     photoGrid.appendChild(div);
   });
 }
 
-function statusLabel(s) {
-  if (s === 'pending') return 'Ready';
-  if (s === 'processing') return '⏳ Reading…';
-  if (s === 'done') return '✓ Done';
-  if (s === 'error') return '✕ Failed';
-  return s;
+function statusLabel(p) {
+  if (p.status === 'pending') return 'Ready';
+  if (p.status === 'processing') return '⏳ Reading…';
+  if (p.status === 'done') return '✓ Done';
+  if (p.status === 'error') return '✕ Failed' + (p.error ? '<div class="error-detail">'+p.error+'</div>' : '');
+  return p.status;
 }
 
 function updatePhotoCount() {
@@ -236,40 +244,71 @@ async function readFileAsBase64(file) {
 
 async function processOne(photo, cols, apiKey) {
   photo.status = 'processing';
+  photo.error = null;
   renderPhotoGrid();
 
-  const base64 = await readFileAsBase64(photo.file);
-  const mediaType = photo.file.type || 'image/jpeg';
+  let base64, mediaType;
+  try {
+    base64 = await readFileAsBase64(photo.file);
+    mediaType = photo.file.type || 'image/jpeg';
+    if (!['image/jpeg','image/png','image/gif','image/webp'].includes(mediaType)) {
+      mediaType = 'image/jpeg';
+    }
+  } catch(e) {
+    throw new Error('Could not read file: ' + photo.file.name);
+  }
 
   const prompt = `Extract all data from this handwritten invoice or form into a JSON array. Return ONLY a valid JSON array of objects. Each object is one line item or one record. Use these exact keys: ${JSON.stringify(cols)}. If a field is not visible use an empty string. Return ONLY the raw JSON array, no markdown, no code fences, no explanation.`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: [
-        { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-        { type: 'text', text: prompt }
-      ]}]
-    })
-  });
+  let res;
+  try {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+          { type: 'text', text: prompt }
+        ]}]
+      })
+    });
+  } catch(e) {
+    throw new Error('Network error — check your internet connection');
+  }
 
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error?.message || 'API error ' + res.status);
+    let errMsg = 'API error ' + res.status;
+    try {
+      const errData = await res.json();
+      if (res.status === 401) errMsg = 'Invalid API key — check it and try again';
+      else if (res.status === 429) errMsg = 'Rate limit hit — wait a moment and retry';
+      else if (res.status === 400) errMsg = 'Bad request: ' + (errData.error?.message || 'unknown');
+      else if (res.status === 529 || res.status === 503) errMsg = 'Anthropic servers busy — try again shortly';
+      else errMsg = errData.error?.message || errMsg;
+    } catch(e) {}
+    throw new Error(errMsg);
   }
 
   const data = await res.json();
   const text = data.content?.find(b => b.type === 'text')?.text || '';
-  let rows = JSON.parse(text.replace(/```json|```/g,'').trim());
-  if (!Array.isArray(rows)) rows = [rows];
+  if (!text) throw new Error('AI returned empty response');
+
+  let rows;
+  try {
+    const clean = text.replace(/```json|```/g,'').trim();
+    rows = JSON.parse(clean);
+    if (!Array.isArray(rows)) rows = [rows];
+  } catch(e) {
+    throw new Error('Could not parse AI response as data');
+  }
+
   photo.status = 'done';
   return rows;
 }
@@ -298,6 +337,8 @@ async function processAll() {
       allRows.push(...rows);
     } catch(err) {
       photo.status = 'error';
+      photo.error = err.message;
+      renderPhotoGrid();
       console.error('Failed on photo:', photo.file.name, err);
     }
     done++;
@@ -305,11 +346,14 @@ async function processAll() {
     renderPhotoGrid();
   }
 
-  const failed = photos.filter(p => p.status === 'error').length;
-  if (failed > 0) {
-    setStatus(`Done — ${total - failed} succeeded, ${failed} failed. Check red photos above.`, '');
+  const failed = photos.filter(p => p.status === 'error');
+  if (failed.length > 0) {
+    setStatus(`Done — ${total - failed.length} succeeded, ${failed.length} failed.`, '');
+    const logHtml = failed.map(p => `<div class="error-item"><strong>${p.file.name}:</strong> ${p.error || 'Unknown error'}</div>`).join('');
+    document.getElementById('error-log').innerHTML = `<div class="error-log"><h3>Errors (${failed.length})</h3>${logHtml}</div>`;
   } else {
     setStatus(`All ${total} invoices read successfully!`, 'ok');
+    document.getElementById('error-log').innerHTML = '';
   }
 
   if (allRows.length > 0) {
