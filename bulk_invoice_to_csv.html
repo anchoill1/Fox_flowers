@@ -10,18 +10,17 @@
   .header { background: #1a1a1a; color: #fff; padding: 1.5rem 2rem; }
   .header h1 { font-size: 1.4rem; font-weight: normal; letter-spacing: -0.02em; }
   .header p { font-size: 0.8rem; color: #aaa; margin-top: 4px; font-family: 'Courier New', monospace; }
-  .main { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+  .main { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
   .card { background: #fff; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; border: 1px solid #e0dbd4; }
   .card h2 { font-size: 0.75rem; font-weight: normal; text-transform: uppercase; letter-spacing: 0.1em; color: #888; margin-bottom: 1rem; font-family: 'Courier New', monospace; }
   label { display: block; font-size: 0.8rem; color: #555; margin-bottom: 0.3rem; font-family: 'Courier New', monospace; }
-  input[type="text"], input[type="password"] { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; font-family: 'Courier New', monospace; background: #fafaf8; color: #1a1a1a; margin-bottom: 0.75rem; }
-  input:focus { outline: none; border-color: #1a1a1a; }
+  input[type="text"], input[type="password"], select { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; font-family: 'Courier New', monospace; background: #fafaf8; color: #1a1a1a; margin-bottom: 0.75rem; }
+  input:focus, select:focus { outline: none; border-color: #1a1a1a; }
   .key-row { display: flex; gap: 8px; align-items: center; margin-bottom: 0.75rem; }
   .key-row input { margin-bottom: 0; flex: 1; }
   .key-toggle { padding: 0.6rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; background: #fafaf8; cursor: pointer; font-size: 0.8rem; white-space: nowrap; color: #555; font-family: 'Courier New', monospace; }
   .drop-zone { border: 2px dashed #ccc; border-radius: 10px; padding: 2.5rem 1rem; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafaf8; }
   .drop-zone:hover, .drop-zone.drag { border-color: #1a1a1a; background: #f0ede8; }
-  .field-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 1rem; }
   .tip { font-size: 0.78rem; color: #888; font-family: 'Courier New', monospace; margin-top: 0.3rem; }
   .btn { padding: 0.65rem 1.25rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.9rem; font-family: Georgia, serif; transition: all 0.15s; }
   .btn-primary { background: #1a1a1a; color: #fff; }
@@ -32,20 +31,14 @@
   .btn-danger { background: #fff; color: #c0392b; border: 1px solid #c0392b; }
   .btn-danger:hover { background: #fdf0ef; }
   .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 1rem; }
-  .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 1rem; }
+  .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 1rem; }
   .photo-card { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #e0dbd4; background: #fafaf8; aspect-ratio: 3/4; }
   .photo-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .photo-card .overlay { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); padding: 6px 8px; font-size: 11px; font-family: 'Courier New', monospace; }
+  .photo-card .overlay { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.65); padding: 6px 8px; font-size: 10px; font-family: 'Courier New', monospace; line-height: 1.4; }
   .photo-card .overlay.pending { color: #ccc; }
   .photo-card .overlay.processing { color: #f0c060; }
   .photo-card .overlay.done { color: #5dca90; }
   .photo-card .overlay.error { color: #f09595; }
-  .error-detail { font-size: 10px; color: #f09595; margin-top: 3px; word-break: break-word; line-height: 1.3; }
-  .error-log { background: #fff8f8; border: 1px solid #f7c1c1; border-radius: 8px; padding: 1rem; margin-top: 1rem; }
-  .error-log h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #c0392b; font-family: 'Courier New', monospace; font-weight: normal; margin-bottom: 0.75rem; }
-  .error-item { font-size: 0.8rem; font-family: 'Courier New', monospace; color: #c0392b; padding: 4px 0; border-bottom: 1px solid #f7c1c1; }
-  .error-item:last-child { border-bottom: none; }
-  .error-item strong { color: #1a1a1a; }
   .photo-card .remove-btn { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
   .progress-bar-wrap { background: #f0ede8; border-radius: 20px; height: 8px; margin: 1rem 0 0.5rem; overflow: hidden; }
   .progress-bar { height: 8px; background: #1a1a1a; border-radius: 20px; transition: width 0.3s; }
@@ -53,6 +46,13 @@
   .status-msg { font-size: 0.85rem; font-family: 'Courier New', monospace; min-height: 20px; margin-top: 0.5rem; }
   .status-msg.ok { color: #2a7a2a; }
   .status-msg.err { color: #c0392b; }
+  .spinner { display: inline-block; width: 11px; height: 11px; border: 2px solid #ccc; border-top-color: #555; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 5px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-log { background: #fff8f8; border: 1px solid #f7c1c1; border-radius: 8px; padding: 1rem; margin-top: 1rem; }
+  .error-log h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #c0392b; font-family: 'Courier New', monospace; font-weight: normal; margin-bottom: 0.75rem; }
+  .error-item { font-size: 0.8rem; font-family: 'Courier New', monospace; color: #c0392b; padding: 4px 0; border-bottom: 1px solid #f7c1c1; }
+  .error-item:last-child { border-bottom: none; }
+  .error-item strong { color: #1a1a1a; }
   table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
   th { text-align: left; font-size: 0.7rem; font-family: 'Courier New', monospace; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #e0dbd4; padding: 7px 8px; white-space: nowrap; }
   td { padding: 5px 8px; border-bottom: 1px solid #f0ede8; vertical-align: middle; }
@@ -61,33 +61,35 @@
   .del-btn { background: none; border: none; cursor: pointer; color: #ccc; font-size: 1rem; padding: 0 4px; }
   .del-btn:hover { color: #c0392b; }
   .badge { display: inline-block; background: #f0ede8; color: #555; font-size: 0.72rem; font-family: 'Courier New', monospace; padding: 2px 8px; border-radius: 20px; margin-left: 8px; }
-  .spinner { display: inline-block; width: 11px; height: 11px; border: 2px solid #ccc; border-top-color: #555; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 5px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @media (max-width: 600px) { .field-grid { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 400px) { .field-grid { grid-template-columns: 1fr; } }
+  .map-grid { display: grid; grid-template-columns: 1fr 40px 1fr; gap: 8px 12px; align-items: center; margin-bottom: 0.5rem; }
+  .map-grid .arrow { text-align: center; color: #aaa; font-size: 1.1rem; padding-bottom: 0.75rem; }
+  .map-grid select { margin-bottom: 0; }
+  .map-grid label { margin-bottom: 0; padding: 0.6rem 0; }
+  .map-header { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #aaa; font-family: 'Courier New', monospace; padding-bottom: 4px; }
+  @media (max-width: 600px) { .map-grid { grid-template-columns: 1fr 24px 1fr; } }
 </style>
 </head>
 <body>
 
 <div class="header">
   <h1>Bulk Invoice Scanner → QuickBooks CSV</h1>
-  <p>Upload up to 20 invoice photos · AI reads each one · download as a single CSV</p>
+  <p>Upload up to 20 invoice photos · AI reads each one · map columns · download as a single CSV</p>
 </div>
 
 <div class="main">
 
   <div class="card">
     <h2>Step 1 — Your Anthropic API Key</h2>
-    <label>API Key (get one at console.anthropic.com → API Keys)</label>
+    <label>API Key (from console.anthropic.com → API Keys)</label>
     <div class="key-row">
       <input type="password" id="api-key" placeholder="sk-ant-...">
       <button class="key-toggle" onclick="toggleKey()">Show</button>
     </div>
-    <p class="tip">Your key stays in your browser and is only sent directly to Anthropic. It is never stored anywhere else.</p>
+    <p class="tip">Your key stays in your browser and is sent only directly to Anthropic.</p>
   </div>
 
   <div class="card">
-    <h2>Step 2 — Upload Invoice Photos</h2>
+    <h2>Step 2 — Upload Invoice Photos (up to 20)</h2>
     <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
       <input type="file" id="file-input" accept="image/*" multiple style="display:none;">
       <svg width="36" height="36" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:8px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
@@ -98,26 +100,13 @@
     <p class="tip" id="photo-count" style="margin-top:8px;"></p>
   </div>
 
-  <div class="card">
-    <h2>Step 3 — CSV Column Headers</h2>
-    <div class="field-grid">
-      <div><label>Customer name</label><input type="text" id="col-customer" value="Customer"></div>
-      <div><label>Invoice number</label><input type="text" id="col-invoice" value="Invoice No"></div>
-      <div><label>Date</label><input type="text" id="col-date" value="Date"></div>
-      <div><label>Description</label><input type="text" id="col-desc" value="Description"></div>
-      <div><label>Amount</label><input type="text" id="col-amount" value="Amount"></div>
-      <div><label>Address</label><input type="text" id="col-address" value="Address"></div>
-    </div>
-    <p class="tip">These become the column headers in your QuickBooks CSV. Edit them to match your QuickBooks setup.</p>
-  </div>
-
-  <div class="btn-row" style="margin-bottom:1rem;">
-    <button class="btn btn-primary" id="process-btn" onclick="processAll()" disabled>Process all invoices</button>
+  <div class="btn-row">
+    <button class="btn btn-primary" id="process-btn" onclick="processAll()" disabled>Read all invoices</button>
     <button class="btn btn-danger" id="clear-btn" onclick="clearAll()" style="display:none;">Clear all</button>
   </div>
 
   <div id="progress-section" style="display:none;" class="card">
-    <h2>Processing</h2>
+    <h2>Reading invoices</h2>
     <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
     <p class="progress-label" id="progress-label">0 of 0 done</p>
     <p class="status-msg" id="status-msg"></p>
@@ -125,13 +114,25 @@
 
   <div id="error-log"></div>
 
+  <div id="mapping-section" style="display:none;" class="card">
+    <h2>Step 3 — Map columns to QuickBooks fields</h2>
+    <p class="tip" style="margin-bottom:1rem;">Match what the AI found in your invoices (left) to the QuickBooks column names you want in the CSV (right). You can ignore fields you don't need.</p>
+    <div class="map-grid">
+      <span class="map-header">Found in your invoices</span>
+      <span></span>
+      <span class="map-header">QuickBooks column name</span>
+    </div>
+    <div id="mapping-rows"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="applyMapping()">Apply mapping & preview</button>
+    </div>
+  </div>
+
   <div id="results-section" style="display:none;" class="card">
     <div style="display:flex; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:8px;">
-      <span style="font-size:0.9rem; font-weight:500;">Extracted data</span>
+      <span style="font-size:0.9rem; font-weight:500;">Final data</span>
       <span class="badge" id="row-count"></span>
-      <button class="btn btn-outline" onclick="downloadCSV()" style="margin-left:auto; padding:0.4rem 1rem; font-size:0.85rem;">
-        ⬇ Download CSV for QuickBooks
-      </button>
+      <button class="btn btn-outline" onclick="downloadCSV()" style="margin-left:auto; padding:0.4rem 1rem; font-size:0.85rem;">⬇ Download CSV for QuickBooks</button>
     </div>
     <p class="tip" style="margin-bottom:8px;">Click any cell to edit before downloading.</p>
     <div style="overflow-x:auto;">
@@ -147,7 +148,10 @@
 
 <script>
 let photos = [];
-let allRows = [];
+let rawRows = [];
+let finalRows = [];
+let finalCols = [];
+let detectedKeys = [];
 
 const fileInput = document.getElementById('file-input');
 const dropZone = document.getElementById('drop-zone');
@@ -155,17 +159,20 @@ const photoGrid = document.getElementById('photo-grid');
 const processBtn = document.getElementById('process-btn');
 const clearBtn = document.getElementById('clear-btn');
 
+const QB_FIELDS = ['Customer', 'Invoice No', 'Date', 'Description', 'Amount', 'Address', 'Email', 'Phone', 'Notes', '(ignore)'];
+
 fileInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
-dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); addFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))); });
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  addFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+});
 
 function addFiles(files) {
   const remaining = 20 - photos.length;
   files.slice(0, remaining).forEach(file => {
-    const id = Date.now() + Math.random();
-    const url = URL.createObjectURL(file);
-    photos.push({ id, file, url, status: 'pending' });
+    photos.push({ id: Date.now() + Math.random(), file, url: URL.createObjectURL(file), status: 'pending', error: null });
   });
   renderPhotoGrid();
   updatePhotoCount();
@@ -176,8 +183,7 @@ function addFiles(files) {
 
 function removePhoto(id) {
   photos = photos.filter(p => p.id !== id);
-  renderPhotoGrid();
-  updatePhotoCount();
+  renderPhotoGrid(); updatePhotoCount();
   processBtn.disabled = photos.length === 0;
   clearBtn.style.display = photos.length > 0 ? '' : 'none';
 }
@@ -187,78 +193,63 @@ function renderPhotoGrid() {
   photos.forEach(p => {
     const div = document.createElement('div');
     div.className = 'photo-card';
-    div.innerHTML = `
-      <img src="${p.url}" alt="Invoice photo">
-      <div class="overlay ${p.status}">${statusLabel(p)}</div>
-      ${p.status === 'pending' ? `<button class="remove-btn" onclick="removePhoto(${p.id})" title="Remove">✕</button>` : ''}
-    `;
+    const errDetail = p.error ? '<br>' + p.error : '';
+    const overlayText = p.status === 'pending' ? 'Ready'
+      : p.status === 'processing' ? '⏳ Reading…'
+      : p.status === 'done' ? '✓ Done'
+      : '✕ Failed' + errDetail;
+    div.innerHTML = `<img src="${p.url}" alt="invoice">
+      <div class="overlay ${p.status}">${overlayText}</div>
+      ${p.status === 'pending' ? `<button class="remove-btn" onclick="removePhoto(${p.id})">✕</button>` : ''}`;
     photoGrid.appendChild(div);
   });
 }
 
-function statusLabel(p) {
-  if (p.status === 'pending') return 'Ready';
-  if (p.status === 'processing') return '⏳ Reading…';
-  if (p.status === 'done') return '✓ Done';
-  if (p.status === 'error') return '✕ Failed' + (p.error ? '<div class="error-detail">'+p.error+'</div>' : '');
-  return p.status;
-}
-
 function updatePhotoCount() {
-  const el = document.getElementById('photo-count');
-  el.textContent = photos.length === 0 ? '' : `${photos.length} photo${photos.length===1?'':'s'} loaded${photos.length===20?' (maximum reached)':''}`;
+  document.getElementById('photo-count').textContent = photos.length === 0 ? ''
+    : `${photos.length} photo${photos.length===1?'':'s'} loaded${photos.length===20?' (maximum)':''}`;
 }
 
 function toggleKey() {
   const inp = document.getElementById('api-key');
-  const btn = inp.nextElementSibling;
   inp.type = inp.type === 'password' ? 'text' : 'password';
-  btn.textContent = inp.type === 'password' ? 'Show' : 'Hide';
-}
-
-function getCols() {
-  return ['col-customer','col-invoice','col-date','col-desc','col-amount','col-address']
-    .map(id => document.getElementById(id).value.trim()).filter(Boolean);
+  inp.nextElementSibling.textContent = inp.type === 'password' ? 'Show' : 'Hide';
 }
 
 function setProgress(done, total) {
-  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
-  document.getElementById('progress-bar').style.width = pct + '%';
-  document.getElementById('progress-label').textContent = `${done} of ${total} invoices processed`;
+  document.getElementById('progress-bar').style.width = Math.round((done/total)*100) + '%';
+  document.getElementById('progress-label').textContent = `${done} of ${total} invoices read`;
 }
 
 function setStatus(msg, type='') {
   const el = document.getElementById('status-msg');
-  el.innerHTML = msg;
-  el.className = 'status-msg' + (type ? ' '+type : '');
+  el.innerHTML = msg; el.className = 'status-msg' + (type ? ' '+type : '');
 }
 
 async function readFileAsBase64(file) {
   return new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload = e => res(e.target.result.split(',')[1]);
-    reader.onerror = rej;
-    reader.readAsDataURL(file);
+    const r = new FileReader();
+    r.onload = e => res(e.target.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
   });
 }
 
-async function processOne(photo, cols, apiKey) {
-  photo.status = 'processing';
-  photo.error = null;
+async function processOne(photo, apiKey) {
+  photo.status = 'processing'; photo.error = null;
   renderPhotoGrid();
 
   let base64, mediaType;
   try {
     base64 = await readFileAsBase64(photo.file);
-    mediaType = photo.file.type || 'image/jpeg';
-    if (!['image/jpeg','image/png','image/gif','image/webp'].includes(mediaType)) {
-      mediaType = 'image/jpeg';
-    }
-  } catch(e) {
-    throw new Error('Could not read file: ' + photo.file.name);
-  }
+    mediaType = ['image/jpeg','image/png','image/gif','image/webp'].includes(photo.file.type) ? photo.file.type : 'image/jpeg';
+  } catch(e) { throw new Error('Could not read file'); }
 
-  const prompt = `Extract all data from this handwritten invoice or form into a JSON array. Return ONLY a valid JSON array of objects. Each object is one line item or one record. Use these exact keys: ${JSON.stringify(cols)}. If a field is not visible use an empty string. Return ONLY the raw JSON array, no markdown, no code fences, no explanation.`;
+  const prompt = `Look at this handwritten invoice or form. Extract ALL fields you can see into a JSON array.
+Return ONLY a valid JSON array of objects. Each object is one line item or one record.
+Use the actual field names from the invoice as the JSON keys (e.g. "Name", "Address", "Invoice Number", "Amount", "Items", "Date" etc — whatever you can read).
+If there are multiple line items return one object per item. If it is a single record return an array with one object.
+Return ONLY the raw JSON array. No markdown. No code fences. No explanation.`;
 
   let res;
   try {
@@ -279,51 +270,36 @@ async function processOne(photo, cols, apiKey) {
         ]}]
       })
     });
-  } catch(e) {
-    throw new Error('Network error — check your internet connection');
-  }
+  } catch(e) { throw new Error('Network error — check internet connection'); }
 
-  let rawText;
-  try {
-    rawText = await res.text();
-  } catch(e) {
-    throw new Error('Could not read API response');
-  }
-
-  console.log('Raw API response:', rawText);
+  const rawText = await res.text();
+  console.log('HTTP', res.status, rawText.slice(0, 400));
 
   let data;
-  try {
-    data = JSON.parse(rawText);
-  } catch(e) {
-    throw new Error('HTTP ' + res.status + ' — ' + rawText.slice(0, 120));
-  }
+  try { data = JSON.parse(rawText); } catch(e) { throw new Error('Unreadable response (HTTP ' + res.status + ')'); }
 
   if (!res.ok) {
-    let errMsg = 'HTTP ' + res.status;
-    if (res.status === 401) errMsg = 'Invalid API key — check it and try again';
-    else if (res.status === 429) errMsg = 'Rate limit — wait a moment and retry';
-    else if (res.status === 400) errMsg = 'Bad request: ' + (data.error?.message || rawText.slice(0, 100));
-    else if (res.status === 529 || res.status === 503) errMsg = 'Anthropic servers busy — try again';
-    else errMsg = data.error?.message || data.error?.type || JSON.stringify(data).slice(0, 120);
-    throw new Error(errMsg);
+    if (res.status === 401) throw new Error('Invalid API key');
+    if (res.status === 403) throw new Error('API key rejected — check credits at console.anthropic.com');
+    if (res.status === 429) throw new Error('Rate limit — wait and retry');
+    if (res.status === 529 || res.status === 503) throw new Error('Anthropic servers busy — retry shortly');
+    throw new Error('HTTP ' + res.status + ': ' + (data?.error?.message || rawText.slice(0, 80)));
   }
 
-  if (data.error) {
-    throw new Error(data.error.message || data.error.type || JSON.stringify(data.error));
-  }
+  if (data.error) throw new Error(data.error.message || data.error.type || 'API error');
 
-  const text = data.content?.find(b => b.type === 'text')?.text || '';
-  if (!text) throw new Error('Empty response. Full response: ' + JSON.stringify(data).slice(0, 200));
+  const textBlock = Array.isArray(data.content) && data.content.find(b => b.type === 'text');
+  if (!textBlock || !textBlock.text) throw new Error('No text returned (stop_reason: ' + (data.stop_reason||'unknown') + ')');
+
+  const aiText = textBlock.text.trim();
+  console.log('AI output:', aiText.slice(0, 300));
 
   let rows;
   try {
-    const clean = text.replace(/```json|```/g,'').trim();
-    rows = JSON.parse(clean);
-    if (!Array.isArray(rows)) rows = [rows];
-  } catch(e) {
-    throw new Error('Could not parse response: ' + text.slice(0, 100));
-  }
+    const clean = aiText.replace(/^```[\w]*\n?/m,'').replace(/```$/m,'').trim();
+    const parsed = JSON.parse(clean);
+    rows = Array.isArray(parsed) ? parsed : [parsed];
+  } catch(e) { throw new Error('Could not parse AI output: ' + aiText.slice(0, 80)); }
 
   photo.status = 'done';
   return rows;
@@ -334,12 +310,13 @@ async function processAll() {
   if (!apiKey) { alert('Please enter your Anthropic API key first.'); return; }
   if (photos.length === 0) { alert('Please add some photos first.'); return; }
 
-  const cols = getCols();
-  allRows = [];
+  rawRows = [];
   processBtn.disabled = true;
   clearBtn.style.display = 'none';
   document.getElementById('progress-section').style.display = 'block';
+  document.getElementById('mapping-section').style.display = 'none';
   document.getElementById('results-section').style.display = 'none';
+  document.getElementById('error-log').innerHTML = '';
 
   let done = 0;
   const total = photos.length;
@@ -347,15 +324,14 @@ async function processAll() {
   setStatus('<span class="spinner"></span>Starting…');
 
   for (const photo of photos) {
-    setStatus(`<span class="spinner"></span>Reading invoice ${done+1} of ${total}…`);
+    setStatus('<span class="spinner"></span>Reading invoice ' + (done+1) + ' of ' + total + '…');
     try {
-      const rows = await processOne(photo, cols, apiKey);
-      allRows.push(...rows);
+      const rows = await processOne(photo, apiKey);
+      rawRows.push(...rows);
     } catch(err) {
       photo.status = 'error';
       photo.error = err.message;
       renderPhotoGrid();
-      console.error('Failed on photo:', photo.file.name, err);
     }
     done++;
     setProgress(done, total);
@@ -364,33 +340,83 @@ async function processAll() {
 
   const failed = photos.filter(p => p.status === 'error');
   if (failed.length > 0) {
-    setStatus(`Done — ${total - failed.length} succeeded, ${failed.length} failed.`, '');
-    const logHtml = failed.map(p => `<div class="error-item"><strong>${p.file.name}:</strong> ${p.error || 'Unknown error'}</div>`).join('');
-    document.getElementById('error-log').innerHTML = `<div class="error-log"><h3>Errors (${failed.length})</h3>${logHtml}</div>`;
+    setStatus('Done — ' + (total-failed.length) + ' succeeded, ' + failed.length + ' failed.', '');
+    document.getElementById('error-log').innerHTML = '<div class="error-log"><h3>Errors (' + failed.length + ')</h3>'
+      + failed.map(p => '<div class="error-item"><strong>' + p.file.name + ':</strong> ' + (p.error||'Unknown') + '</div>').join('')
+      + '</div>';
   } else {
-    setStatus(`All ${total} invoices read successfully!`, 'ok');
-    document.getElementById('error-log').innerHTML = '';
+    setStatus('All ' + total + ' invoices read!', 'ok');
   }
 
-  if (allRows.length > 0) {
-    renderTable(cols, allRows);
-    document.getElementById('results-section').style.display = 'block';
-    document.getElementById('row-count').textContent = allRows.length + (allRows.length===1?' row':' rows');
+  if (rawRows.length > 0) {
+    detectedKeys = [...new Set(rawRows.flatMap(r => Object.keys(r)))];
+    buildMappingUI();
+    document.getElementById('mapping-section').style.display = 'block';
   }
 
   processBtn.disabled = false;
   clearBtn.style.display = '';
 }
 
+function buildMappingUI() {
+  const container = document.getElementById('mapping-rows');
+  container.innerHTML = '';
+
+  const smartMap = {
+    'name': 'Customer', 'customer': 'Customer', 'client': 'Customer',
+    'invoice number': 'Invoice No', 'invoice no': 'Invoice No', 'invoice #': 'Invoice No', 'inv no': 'Invoice No',
+    'date': 'Date',
+    'description': 'Description', 'items': 'Description', 'item': 'Description', 'product': 'Description', 'service': 'Description',
+    'amount': 'Amount', 'total': 'Amount', 'price': 'Amount', 'cost': 'Amount',
+    'address': 'Address', 'addr': 'Address',
+    'email': 'Email', 'phone': 'Phone', 'tel': 'Phone', 'notes': 'Notes', 'note': 'Notes'
+  };
+
+  detectedKeys.forEach(key => {
+    const guessed = smartMap[key.toLowerCase()] || '';
+    const row = document.createElement('div');
+    row.className = 'map-grid';
+    row.innerHTML = `<label style="background:#f5f2ee; border-radius:6px; padding:0.5rem 0.75rem; font-size:0.85rem; margin-bottom:0;">${key}</label>
+      <div class="arrow">→</div>
+      <select data-source-key="${key}">
+        <option value="">(ignore this field)</option>
+        ${QB_FIELDS.filter(f=>f!=='(ignore)').map(f => `<option value="${f}" ${f===guessed?'selected':''}>${f}</option>`).join('')}
+      </select>`;
+    container.appendChild(row);
+  });
+}
+
+function applyMapping() {
+  const selects = document.querySelectorAll('#mapping-rows select');
+  const mapping = {};
+  selects.forEach(sel => {
+    if (sel.value) mapping[sel.dataset.sourceKey] = sel.value;
+  });
+
+  finalCols = [...new Set(Object.values(mapping))];
+  finalRows = rawRows.map(row => {
+    const out = {};
+    finalCols.forEach(col => out[col] = '');
+    Object.entries(mapping).forEach(([src, dest]) => {
+      if (row[src] !== undefined && row[src] !== '') out[dest] = row[src];
+    });
+    return out;
+  });
+
+  renderTable(finalCols, finalRows);
+  document.getElementById('results-section').style.display = 'block';
+  document.getElementById('row-count').textContent = finalRows.length + (finalRows.length===1?' row':' rows');
+  document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
+}
+
 function clearAll() {
-  photos = [];
-  allRows = [];
-  photoGrid.innerHTML = '';
-  updatePhotoCount();
-  processBtn.disabled = true;
-  clearBtn.style.display = 'none';
+  photos = []; rawRows = []; finalRows = []; detectedKeys = [];
+  photoGrid.innerHTML = ''; updatePhotoCount();
+  processBtn.disabled = true; clearBtn.style.display = 'none';
   document.getElementById('progress-section').style.display = 'none';
+  document.getElementById('mapping-section').style.display = 'none';
   document.getElementById('results-section').style.display = 'none';
+  document.getElementById('error-log').innerHTML = '';
 }
 
 function renderTable(cols, data) {
@@ -402,39 +428,33 @@ function renderTable(cols, data) {
     cols.forEach(col => {
       const td = document.createElement('td');
       const inp = document.createElement('input');
-      inp.type = 'text'; inp.value = row[col] || '';
-      inp.addEventListener('input', e => { allRows[ri][col] = e.target.value; });
+      inp.type='text'; inp.value = row[col]||'';
+      inp.addEventListener('input', e => { finalRows[ri][col] = e.target.value; });
       td.appendChild(inp); tr.appendChild(td);
     });
     const del = document.createElement('td');
     del.innerHTML = `<button class="del-btn" onclick="deleteRow(${ri})" title="Delete">✕</button>`;
-    tr.appendChild(del);
-    tbody.appendChild(tr);
+    tr.appendChild(del); tbody.appendChild(tr);
   });
 }
 
 function addRow() {
-  const cols = getCols();
-  const empty = {}; cols.forEach(c => empty[c]='');
-  allRows.push(empty);
-  renderTable(cols, allRows);
-  document.getElementById('row-count').textContent = allRows.length + (allRows.length===1?' row':' rows');
+  const empty = {}; finalCols.forEach(c => empty[c]='');
+  finalRows.push(empty); renderTable(finalCols, finalRows);
+  document.getElementById('row-count').textContent = finalRows.length + (finalRows.length===1?' row':' rows');
 }
 
 function deleteRow(i) {
-  allRows.splice(i,1);
-  renderTable(getCols(), allRows);
-  document.getElementById('row-count').textContent = allRows.length + (allRows.length===1?' row':' rows');
+  finalRows.splice(i,1); renderTable(finalCols, finalRows);
+  document.getElementById('row-count').textContent = finalRows.length + (finalRows.length===1?' row':' rows');
 }
 
 function downloadCSV() {
-  const cols = getCols();
   const esc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
-  const lines = [cols.map(esc).join(','), ...allRows.map(r => cols.map(c=>esc(r[c])).join(','))];
+  const lines = [finalCols.map(esc).join(','), ...finalRows.map(r => finalCols.map(c=>esc(r[c])).join(','))];
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([lines.join('\r\n')], {type:'text/csv'}));
-  a.download = 'quickbooks_invoices.csv';
-  a.click();
+  a.download = 'quickbooks_invoices.csv'; a.click();
 }
 </script>
 </body>
