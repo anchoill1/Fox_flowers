@@ -168,7 +168,7 @@ const photoGrid = document.getElementById('photo-grid');
 const processBtn = document.getElementById('process-btn');
 const clearBtn = document.getElementById('clear-btn');
 
-const QB_FIELDS = ['Customer', 'Invoice No', 'Date', 'Description', 'Amount', 'Address', 'Email', 'Phone', 'Notes', '(ignore)'];
+const QB_FIELDS = ['Customer', 'InvoiceNo', 'InvoiceDate', 'DueDate', 'Item(Product/Service)', 'Description', 'ItemQuantity', 'ItemRate', 'ItemAmount', 'Memo', 'DeliveryAddress', 'Phone', 'Email', 'DepositPaid', 'RemainingToPay', '(ignore)'];
 
 fileInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
@@ -278,10 +278,28 @@ async function processOne(photo, apiKey) {
     mediaType = ['image/jpeg','image/png','image/gif','image/webp'].includes(photo.file.type) ? photo.file.type : 'image/jpeg';
   } catch(e) { throw new Error('Could not read file'); }
 
-  const prompt = `Look at this handwritten invoice or form. Extract ALL fields you can see into a JSON array.
-Return ONLY a valid JSON array of objects. Each object is one line item or one record.
-Use the actual field names from the invoice as the JSON keys (e.g. "Name", "Address", "Invoice Number", "Amount", "Items", "Date" etc — whatever you can read).
-If there are multiple line items return one object per item. If it is a single record return an array with one object.
+  const prompt = `You are helping a flower shop called Fox Flowers read their handwritten order forms and invoices.
+
+Look at this handwritten invoice or order form and extract the data into a JSON array.
+Return ONLY a valid JSON array of objects. Each object is one line item or record.
+
+Use these exact JSON keys:
+- "InvoiceNo": invoice or order number if visible, otherwise ""
+- "Customer": the name of the person or company being billed
+- "InvoiceDate": the order or invoice date in DD/MM/YYYY format
+- "DueDate": delivery date if shown, in DD/MM/YYYY format, otherwise ""
+- "Description": Combine what was ordered (e.g. bouquet, plant, arrangement), who it is for, and who ordered it if it is a company order. Example: "Vibrant bouquet for Catherine Nevin, ordered by UCC". Be descriptive but concise.
+- "ItemQuantity": quantity if shown, otherwise 1
+- "ItemRate": price per unit if shown, otherwise ""
+- "ItemAmount": total amount or price to pay
+- "DeliveryAddress": delivery address if shown
+- "Phone": phone number if shown
+- "Email": email address if shown
+- "Memo": any special instructions, messages, or notes
+- "DepositPaid": deposit amount already paid if shown
+- "RemainingToPay": remaining balance if shown
+
+If there are multiple line items return one object per item with the same InvoiceNo and Customer.
 Return ONLY the raw JSON array. No markdown. No code fences. No explanation.`;
 
   let res;
@@ -396,13 +414,19 @@ function buildMappingUI() {
   container.innerHTML = '';
 
   const smartMap = {
-    'name': 'Customer', 'customer': 'Customer', 'client': 'Customer',
-    'invoice number': 'Invoice No', 'invoice no': 'Invoice No', 'invoice #': 'Invoice No', 'inv no': 'Invoice No',
-    'date': 'Date',
-    'description': 'Description', 'items': 'Description', 'item': 'Description', 'product': 'Description', 'service': 'Description',
-    'amount': 'Amount', 'total': 'Amount', 'price': 'Amount', 'cost': 'Amount',
-    'address': 'Address', 'addr': 'Address',
-    'email': 'Email', 'phone': 'Phone', 'tel': 'Phone', 'notes': 'Notes', 'note': 'Notes'
+    'name': 'Customer', 'customer': 'Customer', 'client': 'Customer', 'ordered by': 'Customer',
+    'invoiceno': 'InvoiceNo', 'invoice number': 'InvoiceNo', 'invoice no': 'InvoiceNo', 'invoice #': 'InvoiceNo', 'order number': 'InvoiceNo',
+    'invoicedate': 'InvoiceDate', 'date': 'InvoiceDate', 'order date': 'InvoiceDate',
+    'duedate': 'DueDate', 'due date': 'DueDate', 'delivery date': 'DueDate',
+    'description': 'Description', 'flowers and decoration required': 'Description', 'items': 'Description', 'item': 'Description', 'order': 'Description',
+    'itemquantity': 'ItemQuantity', 'quantity': 'ItemQuantity', 'qty': 'ItemQuantity',
+    'itemrate': 'ItemRate', 'rate': 'ItemRate', 'unit price': 'ItemRate',
+    'itemamount': 'ItemAmount', 'amount': 'ItemAmount', 'total': 'ItemAmount', 'price': 'ItemAmount', 'price to pay': 'ItemAmount',
+    'memo': 'Memo', 'message': 'Memo', 'notes': 'Memo', 'note': 'Memo', 'special instructions': 'Memo',
+    'deliveryaddress': 'DeliveryAddress', 'delivery address': 'DeliveryAddress', 'address': 'DeliveryAddress',
+    'email': 'Email', 'phone': 'Phone', 'phone number': 'Phone', 'tel': 'Phone',
+    'depositpaid': 'DepositPaid', 'deposit paid': 'DepositPaid', 'deposit': 'DepositPaid',
+    'remainingtopay': 'RemainingToPay', 'remaining to pay': 'RemainingToPay', 'balance': 'RemainingToPay'
   };
 
   detectedKeys.forEach(key => {
