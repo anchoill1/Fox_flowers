@@ -1,0 +1,3 @@
+InvoiceNo,Customer,InvoiceDate,DueDate,Terms,Location,Memo,Item(Product/Service),ItemDescription,ItemQuantity,ItemRate,ItemAmount,ItemTaxCode,ItemTaxAmount,Currency
+INV-001,Mary Smith,01/06/2026,01/07/2026,Net 30,,Flowers order,Bouquets of Flowers,2 bouquets of flowers,2,50.00,100.00,NON,0.00,EUR
+INV-002,Sample Customer,01/06/2026,01/07/2026,Net 30,,,,Sample item,1,200.00,200.00,NON,0.00,EUR
