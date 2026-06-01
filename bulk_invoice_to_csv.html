@@ -86,6 +86,10 @@
       <button class="key-toggle" onclick="toggleKey()">Show</button>
     </div>
     <p class="tip">Your key stays in your browser and is sent only directly to Anthropic.</p>
+    <div style="margin-top:0.75rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button class="btn btn-outline" onclick="checkModels()">Check available models</button>
+      <span id="models-out" style="font-size:0.78rem;font-family:'Courier New',monospace;color:#555;"></span>
+    </div>
   </div>
 
   <div class="card">
@@ -208,6 +212,28 @@ function renderPhotoGrid() {
 function updatePhotoCount() {
   document.getElementById('photo-count').textContent = photos.length === 0 ? ''
     : `${photos.length} photo${photos.length===1?'':'s'} loaded${photos.length===20?' (maximum)':''}`;
+}
+
+async function checkModels() {
+  const apiKey = document.getElementById('api-key').value.trim();
+  if (!apiKey) { alert('Enter your API key first.'); return; }
+  const out = document.getElementById('models-out');
+  out.textContent = 'Checking…';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/models', {
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      }
+    });
+    const data = await res.json();
+    if (!res.ok) { out.textContent = 'Error: ' + (data?.error?.message || res.status); return; }
+    const names = (data.data || []).map(m => m.id).join(', ');
+    out.textContent = 'Available: ' + (names || 'none found');
+  } catch(e) {
+    out.textContent = 'Network error: ' + e.message;
+  }
 }
 
 function toggleKey() {
