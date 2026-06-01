@@ -283,22 +283,38 @@ async function processOne(photo, cols, apiKey) {
     throw new Error('Network error — check your internet connection');
   }
 
+  let rawText;
+  try {
+    rawText = await res.text();
+  } catch(e) {
+    throw new Error('Could not read API response');
+  }
+
+  console.log('Raw API response:', rawText);
+
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch(e) {
+    throw new Error('HTTP ' + res.status + ' — ' + rawText.slice(0, 120));
+  }
+
   if (!res.ok) {
-    let errMsg = 'API error ' + res.status;
-    try {
-      const errData = await res.json();
-      if (res.status === 401) errMsg = 'Invalid API key — check it and try again';
-      else if (res.status === 429) errMsg = 'Rate limit hit — wait a moment and retry';
-      else if (res.status === 400) errMsg = 'Bad request: ' + (errData.error?.message || 'unknown');
-      else if (res.status === 529 || res.status === 503) errMsg = 'Anthropic servers busy — try again shortly';
-      else errMsg = errData.error?.message || errMsg;
-    } catch(e) {}
+    let errMsg = 'HTTP ' + res.status;
+    if (res.status === 401) errMsg = 'Invalid API key — check it and try again';
+    else if (res.status === 429) errMsg = 'Rate limit — wait a moment and retry';
+    else if (res.status === 400) errMsg = 'Bad request: ' + (data.error?.message || rawText.slice(0, 100));
+    else if (res.status === 529 || res.status === 503) errMsg = 'Anthropic servers busy — try again';
+    else errMsg = data.error?.message || data.error?.type || JSON.stringify(data).slice(0, 120);
     throw new Error(errMsg);
   }
 
-  const data = await res.json();
+  if (data.error) {
+    throw new Error(data.error.message || data.error.type || JSON.stringify(data.error));
+  }
+
   const text = data.content?.find(b => b.type === 'text')?.text || '';
-  if (!text) throw new Error('AI returned empty response');
+  if (!text) throw new Error('Empty response. Full response: ' + JSON.stringify(data).slice(0, 200));
 
   let rows;
   try {
@@ -306,7 +322,7 @@ async function processOne(photo, cols, apiKey) {
     rows = JSON.parse(clean);
     if (!Array.isArray(rows)) rows = [rows];
   } catch(e) {
-    throw new Error('Could not parse AI response as data');
+    throw new Error('Could not parse response: ' + text.slice(0, 100));
   }
 
   photo.status = 'done';
