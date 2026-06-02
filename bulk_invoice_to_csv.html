@@ -280,26 +280,21 @@ async function processOne(photo, apiKey) {
 
   const prompt = `You are helping a flower shop called Fox Flowers read their handwritten order forms and invoices.
 
-Look at this handwritten invoice or order form and extract the data into a JSON array.
-Return ONLY a valid JSON array of objects. Each object is one line item or record.
+Look at this handwritten invoice or order form and extract the data into a JSON array ready to import into QuickBooks Online.
 
-Use these exact JSON keys:
-- "InvoiceNo": invoice or order number if visible, otherwise ""
+Return ONLY a valid JSON array of objects. Use these EXACT JSON keys (these are the QuickBooks column names):
+- "InvoiceNo": invoice or order number if visible, otherwise leave blank
 - "Customer": the name of the person or company being billed
 - "InvoiceDate": the order or invoice date in DD/MM/YYYY format
-- "DueDate": delivery date if shown, in DD/MM/YYYY format, otherwise ""
-- "Description": Combine what was ordered (e.g. bouquet, plant, arrangement), who it is for, and who ordered it if it is a company order. Example: "Vibrant bouquet for Catherine Nevin, ordered by UCC". Be descriptive but concise.
+- "DueDate": delivery date if shown in DD/MM/YYYY format, otherwise leave blank
+- "Terms": payment terms if shown (e.g. "Due on receipt"), otherwise "Due on receipt"
+- "Memo": delivery time, special instructions, or any notes (e.g. "Delivery between 11am - 1pm")
+- "ItemDescription": describe what was ordered combined with who it is for and who ordered it if a company. Example: "Vibrant bouquet for wedding at Westside, ordered by Catherine Nevin/UCC". Be descriptive but concise.
 - "ItemQuantity": quantity if shown, otherwise 1
-- "ItemRate": price per unit if shown, otherwise ""
-- "ItemAmount": total amount or price to pay
-- "DeliveryAddress": delivery address if shown
-- "Phone": phone number if shown
-- "Email": email address if shown
-- "Memo": any special instructions, messages, or notes
-- "DepositPaid": deposit amount already paid if shown
-- "RemainingToPay": remaining balance if shown
+- "ItemRate": price per unit if shown, otherwise leave blank
+- "ItemAmount": the REMAINING TO PAY amount if shown, otherwise the total amount
 
-If there are multiple line items return one object per item with the same InvoiceNo and Customer.
+If there are multiple line items on one invoice, return one object per line item. Repeat the InvoiceNo and Customer on each row.
 Return ONLY the raw JSON array. No markdown. No code fences. No explanation.`;
 
   let res;
@@ -418,15 +413,13 @@ function buildMappingUI() {
     'invoiceno': 'InvoiceNo', 'invoice number': 'InvoiceNo', 'invoice no': 'InvoiceNo', 'invoice #': 'InvoiceNo', 'order number': 'InvoiceNo',
     'invoicedate': 'InvoiceDate', 'date': 'InvoiceDate', 'order date': 'InvoiceDate',
     'duedate': 'DueDate', 'due date': 'DueDate', 'delivery date': 'DueDate',
-    'description': 'Description', 'flowers and decoration required': 'Description', 'items': 'Description', 'item': 'Description', 'order': 'Description',
+    'terms': 'Terms', 'payment terms': 'Terms',
+    'itemdescription': 'ItemDescription', 'description': 'ItemDescription', 'flowers and decoration required': 'ItemDescription', 'items': 'ItemDescription', 'item': 'ItemDescription', 'order': 'ItemDescription',
     'itemquantity': 'ItemQuantity', 'quantity': 'ItemQuantity', 'qty': 'ItemQuantity',
     'itemrate': 'ItemRate', 'rate': 'ItemRate', 'unit price': 'ItemRate',
-    'itemamount': 'ItemAmount', 'amount': 'ItemAmount', 'total': 'ItemAmount', 'price': 'ItemAmount', 'price to pay': 'ItemAmount',
-    'memo': 'Memo', 'message': 'Memo', 'notes': 'Memo', 'note': 'Memo', 'special instructions': 'Memo',
-    'deliveryaddress': 'DeliveryAddress', 'delivery address': 'DeliveryAddress', 'address': 'DeliveryAddress',
-    'email': 'Email', 'phone': 'Phone', 'phone number': 'Phone', 'tel': 'Phone',
-    'depositpaid': 'DepositPaid', 'deposit paid': 'DepositPaid', 'deposit': 'DepositPaid',
-    'remainingtopay': 'RemainingToPay', 'remaining to pay': 'RemainingToPay', 'balance': 'RemainingToPay'
+    'itemamount': 'ItemAmount', 'remaining to pay': 'ItemAmount', 'remainingtopay': 'ItemAmount', 'total': 'ItemAmount', 'price to pay': 'ItemAmount', 'amount': 'ItemAmount',
+    'memo': 'Memo', 'message': 'Memo', 'notes': 'Memo', 'special instructions': 'Memo', 'time': 'Memo',
+    'servicedate': 'ServiceDate', 'service date': 'ServiceDate'
   };
 
   detectedKeys.forEach(key => {
@@ -507,11 +500,32 @@ function deleteRow(i) {
 }
 
 function downloadCSV() {
+  // Use exact QuickBooks Ireland column format
+  const qbCols = ['*InvoiceNo','*Customer','*InvoiceDate','*DueDate','Terms','Location','Memo','Item(Product/Service)','ItemDescription','ItemQuantity','ItemRate','*ItemAmount','Service Date'];
+  // Map our keys to QB column names
+  const keyMap = {
+    '*InvoiceNo': 'InvoiceNo',
+    '*Customer': 'Customer',
+    '*InvoiceDate': 'InvoiceDate',
+    '*DueDate': 'DueDate',
+    'Terms': 'Terms',
+    'Location': 'Location',
+    'Memo': 'Memo',
+    'Item(Product/Service)': 'Item(Product/Service)',
+    'ItemDescription': 'ItemDescription',
+    'ItemQuantity': 'ItemQuantity',
+    'ItemRate': 'ItemRate',
+    '*ItemAmount': 'ItemAmount',
+    'Service Date': 'ServiceDate'
+  };
   const esc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
-  const lines = [finalCols.map(esc).join(','), ...finalRows.map(r => finalCols.map(c=>esc(r[c])).join(','))];
+  const lines = [qbCols.map(esc).join(',')];
+  finalRows.forEach(r => {
+    lines.push(qbCols.map(col => esc(r[keyMap[col]] || '')).join(','));
+  });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([lines.join('\r\n')], {type:'text/csv'}));
-  a.download = 'quickbooks_invoices.csv'; a.click();
+  a.download = 'fox_flowers_quickbooks.csv'; a.click();
 }
 </script>
 </body>
