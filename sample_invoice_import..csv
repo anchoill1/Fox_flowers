@@ -1,0 +1,14 @@
+*InvoiceNo,*Customer,*InvoiceDate,*DueDate,Terms,Location,Memo,Item(Product/Service),ItemDescription,ItemQuantity,ItemRate,*ItemAmount,Service Date
+1001,Chris Smith,08/05/2026,07/06/2026,Net 30,,My Memo,Trimming,,1.00,7.00,7.00,08/05/2026
+1001,,,,,,,Design,New Garden Design,12.00,71.00,852.00,
+1001,,,,,,,Trimming,,5.00,111.00,555.00,08/05/2026
+1001,,,,,,,Gardening,General maintenance,14.00,11.00,154.00,
+1002,Karuna Ramachandran,07/05/2026,07/05/2026,Due on receipt,,,Trimming,,16.00,41.00,656.00,07/05/2026
+1002,,,,,,,Soil,Supplies for flower beds,1.00,54.00,54.00,07/05/2026
+1003,Lynda Higgs,06/05/2026,05/07/2026,Net 60,,,Rocks,,4.00,47.00,188.00,
+1004,Karuna Ramachandran,08/05/2026,23/05/2026,Net 15,,,Soil,Supplies for hanging pots,1.00,29.00,29.00,08/05/2026
+1004,,,,,,,Rocks,,5.00,46.00,230.00,08/05/2026
+1004,,,,,,,Trimming,,15.00,48.00,720.00,
+,,,,,,,,,,,
+All data is for sample purposes only,,,,,,,,,,,
+* denotes a mandatory column,,,,,,,,,,,

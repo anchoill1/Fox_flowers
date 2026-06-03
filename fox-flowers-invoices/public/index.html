@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fox Flowers — Invoice Scanner → QuickBooks CSV</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: #f5f2ee; min-height: 100vh; color: #1a1a1a; }
+  .header { background: #1a1a1a; color: #fff; padding: 1.5rem 2rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+  .header h1 { font-size: 1.4rem; font-weight: normal; letter-spacing: -0.02em; flex:1; }
+  .header p { font-size: 0.8rem; color: #aaa; margin-top: 4px; font-family: 'Courier New', monospace; }
+  .api-status { font-size:0.75rem; font-family:'Courier New',monospace; padding:4px 10px; border-radius:20px; white-space:nowrap; }
+  .api-status.ok  { background:#1e4d1e; color:#5dca90; }
+  .api-status.err { background:#4d1e1e; color:#f09595; }
+  .main { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
+  .card { background: #fff; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; border: 1px solid #e0dbd4; }
+  .card h2 { font-size: 0.75rem; font-weight: normal; text-transform: uppercase; letter-spacing: 0.1em; color: #888; margin-bottom: 1rem; font-family: 'Courier New', monospace; }
+  label { display: block; font-size: 0.8rem; color: #555; margin-bottom: 0.3rem; font-family: 'Courier New', monospace; }
+  select { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; font-family: 'Courier New', monospace; background: #fafaf8; color: #1a1a1a; margin-bottom: 0.75rem; }
+  select:focus { outline: none; border-color: #1a1a1a; }
+  .drop-zone { border: 2px dashed #ccc; border-radius: 10px; padding: 2.5rem 1rem; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafaf8; }
+  .drop-zone:hover, .drop-zone.drag { border-color: #1a1a1a; background: #f0ede8; }
+  .tip { font-size: 0.78rem; color: #888; font-family: 'Courier New', monospace; margin-top: 0.3rem; }
+  .btn { padding: 0.65rem 1.25rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.9rem; font-family: Georgia, serif; transition: all 0.15s; }
+  .btn-primary { background: #1a1a1a; color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #333; }
+  .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+  .btn-outline { background: #fff; color: #1a1a1a; border: 1px solid #1a1a1a; }
+  .btn-outline:hover { background: #f0ede8; }
+  .btn-danger { background: #fff; color: #c0392b; border: 1px solid #c0392b; }
+  .btn-danger:hover { background: #fdf0ef; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 1rem; }
+  .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 1rem; }
+  .photo-card { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #e0dbd4; background: #fafaf8; aspect-ratio: 3/4; }
+  .photo-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-card .overlay { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.65); padding: 6px 8px; font-size: 10px; font-family: 'Courier New', monospace; line-height: 1.4; }
+  .photo-card .overlay.pending { color: #ccc; }
+  .photo-card .overlay.processing { color: #f0c060; }
+  .photo-card .overlay.done { color: #5dca90; }
+  .photo-card .overlay.error { color: #f09595; }
+  .photo-card .remove-btn { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+  .progress-bar-wrap { background: #f0ede8; border-radius: 20px; height: 8px; margin: 1rem 0 0.5rem; overflow: hidden; }
+  .progress-bar { height: 8px; background: #1a1a1a; border-radius: 20px; transition: width 0.3s; }
+  .progress-label { font-size: 0.8rem; font-family: 'Courier New', monospace; color: #555; }
+  .status-msg { font-size: 0.85rem; font-family: 'Courier New', monospace; min-height: 20px; margin-top: 0.5rem; }
+  .status-msg.ok { color: #2a7a2a; }
+  .status-msg.err { color: #c0392b; }
+  .spinner { display: inline-block; width: 11px; height: 11px; border: 2px solid #ccc; border-top-color: #555; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 5px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-log { background: #fff8f8; border: 1px solid #f7c1c1; border-radius: 8px; padding: 1rem; margin-top: 1rem; }
+  .error-log h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #c0392b; font-family: 'Courier New', monospace; font-weight: normal; margin-bottom: 0.75rem; }
+  .error-item { font-size: 0.8rem; font-family: 'Courier New', monospace; color: #c0392b; padding: 4px 0; border-bottom: 1px solid #f7c1c1; }
+  .error-item:last-child { border-bottom: none; }
+  .error-item strong { color: #1a1a1a; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { text-align: left; font-size: 0.7rem; font-family: 'Courier New', monospace; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #e0dbd4; padding: 7px 8px; white-space: nowrap; }
+  td { padding: 5px 8px; border-bottom: 1px solid #f0ede8; vertical-align: middle; }
+  td input { border: none; background: transparent; width: 100%; font-size: 0.82rem; font-family: Georgia, serif; color: #1a1a1a; padding: 0; min-width: 60px; }
+  td input:focus { outline: none; background: #f5f2ee; border-radius: 3px; padding: 0 3px; }
+  .del-btn { background: none; border: none; cursor: pointer; color: #ccc; font-size: 1rem; padding: 0 4px; }
+  .del-btn:hover { color: #c0392b; }
+  .badge { display: inline-block; background: #f0ede8; color: #555; font-size: 0.72rem; font-family: 'Courier New', monospace; padding: 2px 8px; border-radius: 20px; margin-left: 8px; }
+  .map-grid { display: grid; grid-template-columns: 1fr 40px 1fr; gap: 8px 12px; align-items: center; margin-bottom: 0.5rem; }
+  .map-grid .arrow { text-align: center; color: #aaa; font-size: 1.1rem; padding-bottom: 0.75rem; }
+  .map-grid select { margin-bottom: 0; }
+  .map-grid label { margin-bottom: 0; padding: 0.6rem 0; }
+  .map-header { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #aaa; font-family: 'Courier New', monospace; padding-bottom: 4px; }
+  @media (max-width: 600px) { .map-grid { grid-template-columns: 1fr 24px 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="flex:1;">
+    <h1>🌸 Fox Flowers — Invoice Scanner</h1>
+    <p>Drop invoice photos · AI reads each one · map columns · download QuickBooks CSV</p>
+  </div>
+  <div id="api-status" class="api-status">checking…</div>
+</div>
+
+<div class="main">
+
+  <!-- Model selector -->
+  <div class="card">
+    <h2>Model</h2>
+    <label>Claude model to use for reading invoices</label>
+    <select id="model-select" style="width:auto;font-size:0.85rem;margin-bottom:0;">
+      <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (fastest/cheapest)</option>
+      <option value="claude-sonnet-4-5-20250929" selected>claude-sonnet-4-5 (recommended)</option>
+      <option value="claude-opus-4-5-20251101">claude-opus-4-5 (most capable)</option>
+    </select>
+  </div>
+
+  <!-- Upload -->
+  <div class="card">
+    <h2>Step 1 — Add Invoice Photos</h2>
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <input type="file" id="file-input" accept="image/*" multiple style="display:none;">
+      <svg width="36" height="36" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:8px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      <p style="font-weight:500; font-size:0.95rem;">Click or drag & drop photos here</p>
+      <p style="font-size:0.8rem; color:#888; margin-top:4px; font-family:'Courier New',monospace;">JPG, PNG, HEIC — saved to your local invoices folder</p>
+    </div>
+    <div class="photo-grid" id="photo-grid"></div>
+    <p class="tip" id="photo-count" style="margin-top:8px;"></p>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="process-btn" onclick="processAll()" disabled>Read all invoices</button>
+    <button class="btn btn-danger" id="clear-btn" onclick="clearAll()" style="display:none;">Clear all</button>
+  </div>
+
+  <div id="progress-section" style="display:none;" class="card">
+    <h2>Reading invoices</h2>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+    <p class="progress-label" id="progress-label">0 of 0 done</p>
+    <p class="status-msg" id="status-msg"></p>
+  </div>
+
+  <div id="error-log-wrap"></div>
+
+  <div id="mapping-section" style="display:none;" class="card">
+    <h2>Step 2 — Map columns to QuickBooks fields</h2>
+    <p class="tip" style="margin-bottom:1rem;">Match what the AI found in your invoices (left) to the QuickBooks column names you want in the CSV (right). You can ignore fields you don't need.</p>
+    <div class="map-grid">
+      <span class="map-header">Found in your invoices</span>
+      <span></span>
+      <span class="map-header">QuickBooks column name</span>
+    </div>
+    <div id="mapping-rows"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="applyMapping()">Apply mapping & preview</button>
+    </div>
+  </div>
+
+  <div id="results-section" style="display:none;" class="card">
+    <div style="display:flex; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:8px;">
+      <span style="font-size:0.9rem; font-weight:500;">Final data</span>
+      <span class="badge" id="row-count"></span>
+      <button class="btn btn-outline" onclick="downloadCSV()" style="margin-left:auto; padding:0.4rem 1rem; font-size:0.85rem;">⬇ Download CSV for QuickBooks</button>
+    </div>
+    <p class="tip" style="margin-bottom:8px;">Click any cell to edit before downloading.</p>
+    <div style="overflow-x:auto;">
+      <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
+    </div>
+    <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn btn-outline" onclick="addRow()" style="font-size:0.85rem; padding:0.4rem 0.9rem;">+ Add row</button>
+      <button class="btn btn-outline" onclick="downloadCSV()" style="font-size:0.85rem; padding:0.4rem 0.9rem;">⬇ Download CSV</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let photos = [];       // { id, filename, url, status, error }
+let rawRows = [];
+let finalRows = [];
+let finalCols = [];
+let detectedKeys = [];
+
+const fileInput  = document.getElementById('file-input');
+const dropZone   = document.getElementById('drop-zone');
+const photoGrid  = document.getElementById('photo-grid');
+const processBtn = document.getElementById('process-btn');
+const clearBtn   = document.getElementById('clear-btn');
+
+const QB_FIELDS = ['Customer','InvoiceNo','InvoiceDate','DueDate','Item(Product/Service)','ItemDescription','ItemQuantity','ItemRate','ItemAmount','Memo','DeliveryAddress','Phone','Email','DepositPaid','RemainingToPay','ServiceDate','Location','Terms','(ignore)'];
+
+// ── Server health check ───────────────────────────────────────────────────────
+async function checkApiStatus() {
+  const el = document.getElementById('api-status');
+  try {
+    const r = await fetch('/api/images');
+    if (r.ok) {
+      el.textContent = '● server running';
+      el.className = 'api-status ok';
+    } else {
+      el.textContent = '● server error ' + r.status;
+      el.className = 'api-status err';
+    }
+  } catch(e) {
+    el.textContent = '● server offline';
+    el.className = 'api-status err';
+  }
+}
+
+// ── Load saved images from server on startup ──────────────────────────────────
+async function loadSavedImages() {
+  try {
+    const r = await fetch('/api/images');
+    if (!r.ok) return;
+    const { files } = await r.json();
+    if (!files || files.length === 0) return;
+    files.forEach(f => {
+      photos.push({ id: f.filename, filename: f.filename, url: f.url, status: 'pending', error: null });
+    });
+    renderPhotoGrid();
+    updatePhotoCount();
+    processBtn.disabled = false;
+    clearBtn.style.display = '';
+    if (files.length > 0) {
+      const note = document.createElement('p');
+      note.className = 'tip';
+      note.style.cssText = 'color:#2a7a2a;margin-top:6px;';
+      note.textContent = `↩ ${files.length} saved invoice${files.length===1?'':'s'} loaded from disk.`;
+      document.getElementById('photo-count').after(note);
+      setTimeout(() => note.remove(), 4000);
+    }
+  } catch(e) {
+    console.warn('Could not load saved images:', e);
+  }
+}
+
+// ── Drag & drop / file input ──────────────────────────────────────────────────
+fileInput.addEventListener('change', e => uploadFiles(Array.from(e.target.files)));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  uploadFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+});
+
+async function uploadFiles(files) {
+  if (files.length === 0) return;
+  const remaining = 20 - photos.length;
+  const toUpload = files.slice(0, remaining);
+
+  // Show pending placeholders immediately
+  toUpload.forEach(file => {
+    const tempId = 'tmp_' + Date.now() + Math.random();
+    photos.push({ id: tempId, filename: null, url: URL.createObjectURL(file), status: 'uploading', error: null, _tempId: tempId });
+  });
+  renderPhotoGrid();
+  updatePhotoCount();
+  fileInput.value = '';
+
+  // Upload to server
+  const formData = new FormData();
+  toUpload.forEach(f => formData.append('images', f));
+
+  try {
+    const r = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Upload failed');
+
+    // Replace temp placeholders with real server filenames
+    data.saved.forEach((saved, i) => {
+      const tempId = photos.find(p => p.status === 'uploading')?._tempId;
+      const idx = photos.findIndex(p => p._tempId === tempId || p.status === 'uploading');
+      if (idx !== -1) {
+        photos[idx] = { id: saved.filename, filename: saved.filename, url: saved.url, status: 'pending', error: null };
+      }
+    });
+  } catch(e) {
+    // Mark uploading ones as error
+    photos.forEach(p => { if (p.status === 'uploading') { p.status = 'error'; p.error = e.message; } });
+  }
+
+  renderPhotoGrid();
+  updatePhotoCount();
+  processBtn.disabled = photos.filter(p => p.status !== 'error').length === 0;
+  clearBtn.style.display = photos.length > 0 ? '' : 'none';
+}
+
+async function removePhoto(id) {
+  const photo = photos.find(p => p.id === id);
+  if (photo && photo.filename) {
+    try { await fetch('/api/images/' + encodeURIComponent(photo.filename), { method: 'DELETE' }); } catch(e) {}
+  }
+  photos = photos.filter(p => p.id !== id);
+  renderPhotoGrid(); updatePhotoCount();
+  processBtn.disabled = photos.filter(p => p.status !== 'error').length === 0;
+  clearBtn.style.display = photos.length > 0 ? '' : 'none';
+}
+
+function renderPhotoGrid() {
+  photoGrid.innerHTML = '';
+  photos.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'photo-card';
+    const overlayText = p.status === 'pending'    ? 'Ready'
+      : p.status === 'uploading'  ? '⏫ Saving…'
+      : p.status === 'processing' ? '⏳ Reading…'
+      : p.status === 'done'       ? '✓ Done'
+      : '✕ Failed' + (p.error ? '<br>' + p.error : '');
+    div.innerHTML = `<img src="${p.url}" alt="invoice">
+      <div class="overlay ${p.status}">${overlayText}</div>
+      ${(p.status === 'pending' || p.status === 'error') ? `<button class="remove-btn" onclick="removePhoto('${p.id}')">✕</button>` : ''}`;
+    photoGrid.appendChild(div);
+  });
+}
+
+function updatePhotoCount() {
+  const n = photos.length;
+  document.getElementById('photo-count').textContent = n === 0 ? ''
+    : `${n} photo${n===1?'':'s'}${n===20?' (maximum)':''}`;
+}
+
+// ── Process invoices ──────────────────────────────────────────────────────────
+function setProgress(done, total) {
+  document.getElementById('progress-bar').style.width = Math.round((done/total)*100) + '%';
+  document.getElementById('progress-label').textContent = `${done} of ${total} invoices read`;
+}
+
+function setStatus(msg, type='') {
+  const el = document.getElementById('status-msg');
+  el.innerHTML = msg; el.className = 'status-msg' + (type ? ' '+type : '');
+}
+
+async function processOne(photo) {
+  photo.status = 'processing'; photo.error = null;
+  renderPhotoGrid();
+
+  const r = await fetch('/api/scan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename: photo.filename, model: document.getElementById('model-select').value })
+  });
+
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'Server error ' + r.status);
+
+  photo.status = 'done';
+  return data.rows;
+}
+
+async function processAll() {
+  const pending = photos.filter(p => p.status === 'pending' || p.status === 'error');
+  if (pending.length === 0) { alert('No pending invoices to process.'); return; }
+
+  rawRows = [];
+  processBtn.disabled = true;
+  clearBtn.style.display = 'none';
+  document.getElementById('progress-section').style.display = 'block';
+  document.getElementById('mapping-section').style.display = 'none';
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('error-log-wrap').innerHTML = '';
+
+  let done = 0;
+  const total = pending.length;
+  setProgress(0, total);
+  setStatus('<span class="spinner"></span>Starting…');
+
+  for (const photo of pending) {
+    setStatus('<span class="spinner"></span>Reading invoice ' + (done+1) + ' of ' + total + '…');
+    try {
+      const rows = await processOne(photo);
+      rawRows.push(...rows);
+    } catch(err) {
+      photo.status = 'error';
+      photo.error = err.message;
+      renderPhotoGrid();
+    }
+    done++;
+    setProgress(done, total);
+    renderPhotoGrid();
+  }
+
+  const failed = photos.filter(p => p.status === 'error');
+  if (failed.length > 0) {
+    setStatus('Done — ' + (total - failed.length) + ' succeeded, ' + failed.length + ' failed.');
+    document.getElementById('error-log-wrap').innerHTML = '<div class="error-log"><h3>Errors (' + failed.length + ')</h3>'
+      + failed.map(p => `<div class="error-item"><strong>${p.filename||p.id}:</strong> ${p.error||'Unknown'}</div>`).join('')
+      + '</div>';
+  } else {
+    setStatus('All ' + total + ' invoices read!', 'ok');
+  }
+
+  if (rawRows.length > 0) {
+    detectedKeys = [...new Set(rawRows.flatMap(r => Object.keys(r)))];
+    buildMappingUI();
+    document.getElementById('mapping-section').style.display = 'block';
+  }
+
+  processBtn.disabled = false;
+  clearBtn.style.display = '';
+}
+
+// ── Mapping UI ────────────────────────────────────────────────────────────────
+function buildMappingUI() {
+  const container = document.getElementById('mapping-rows');
+  container.innerHTML = '';
+
+  const smartMap = {
+    'name': 'Customer', 'customer': 'Customer', 'client': 'Customer', 'ordered by': 'Customer',
+    'invoiceno': 'InvoiceNo', 'invoice number': 'InvoiceNo', 'invoice no': 'InvoiceNo', 'invoice #': 'InvoiceNo', 'order number': 'InvoiceNo',
+    'invoicedate': 'InvoiceDate', 'date': 'InvoiceDate', 'order date': 'InvoiceDate',
+    'duedate': 'DueDate', 'due date': 'DueDate', 'delivery date': 'DueDate',
+    'terms': 'Terms', 'payment terms': 'Terms',
+    'itemdescription': 'ItemDescription', 'description': 'ItemDescription', 'items': 'ItemDescription', 'item': 'ItemDescription', 'order': 'ItemDescription',
+    'itemquantity': 'ItemQuantity', 'quantity': 'ItemQuantity', 'qty': 'ItemQuantity',
+    'itemrate': 'ItemRate', 'rate': 'ItemRate', 'unit price': 'ItemRate',
+    'itemamount': 'ItemAmount', 'remaining to pay': 'ItemAmount', 'total': 'ItemAmount', 'amount': 'ItemAmount',
+    'memo': 'Memo', 'message': 'Memo', 'notes': 'Memo', 'special instructions': 'Memo', 'time': 'Memo',
+    'servicedate': 'ServiceDate', 'service date': 'ServiceDate',
+    'location': 'Location'
+  };
+
+  detectedKeys.forEach(key => {
+    const guessed = smartMap[key.toLowerCase()] || '';
+    const row = document.createElement('div');
+    row.className = 'map-grid';
+    row.innerHTML = `<label style="background:#f5f2ee; border-radius:6px; padding:0.5rem 0.75rem; font-size:0.85rem; margin-bottom:0;">${key}</label>
+      <div class="arrow">→</div>
+      <select data-source-key="${key}">
+        <option value="">(ignore this field)</option>
+        ${QB_FIELDS.filter(f=>f!=='(ignore)').map(f => `<option value="${f}" ${f===guessed?'selected':''}>${f}</option>`).join('')}
+      </select>`;
+    container.appendChild(row);
+  });
+}
+
+function applyMapping() {
+  const selects = document.querySelectorAll('#mapping-rows select');
+  const mapping = {};
+  selects.forEach(sel => { if (sel.value) mapping[sel.dataset.sourceKey] = sel.value; });
+
+  finalCols = [...new Set(Object.values(mapping))];
+  finalRows = rawRows.map(row => {
+    const out = {};
+    finalCols.forEach(col => out[col] = '');
+    Object.entries(mapping).forEach(([src, dest]) => {
+      if (row[src] !== undefined && row[src] !== '') out[dest] = row[src];
+    });
+    return out;
+  });
+
+  renderTable(finalCols, finalRows);
+  document.getElementById('results-section').style.display = 'block';
+  document.getElementById('row-count').textContent = finalRows.length + (finalRows.length===1?' row':' rows');
+  document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Table & editing ───────────────────────────────────────────────────────────
+function renderTable(cols, data) {
+  document.getElementById('thead').innerHTML = '<tr>' + cols.map(c=>`<th>${c}</th>`).join('') + '<th style="width:28px;"></th></tr>';
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  data.forEach((row, ri) => {
+    const tr = document.createElement('tr');
+    cols.forEach(col => {
+      const td = document.createElement('td');
+      const inp = document.createElement('input');
+      inp.type='text'; inp.value = row[col]||'';
+      inp.addEventListener('input', e => { finalRows[ri][col] = e.target.value; });
+      td.appendChild(inp); tr.appendChild(td);
+    });
+    const del = document.createElement('td');
+    del.innerHTML = `<button class="del-btn" onclick="deleteRow(${ri})" title="Delete">✕</button>`;
+    tr.appendChild(del); tbody.appendChild(tr);
+  });
+}
+
+function addRow() {
+  const empty = {}; finalCols.forEach(c => empty[c]='');
+  finalRows.push(empty); renderTable(finalCols, finalRows);
+  document.getElementById('row-count').textContent = finalRows.length + (finalRows.length===1?' row':' rows');
+}
+
+function deleteRow(i) {
+  finalRows.splice(i,1); renderTable(finalCols, finalRows);
+  document.getElementById('row-count').textContent = finalRows.length + (finalRows.length===1?' row':' rows');
+}
+
+function clearAll() {
+  photos = []; rawRows = []; finalRows = []; detectedKeys = [];
+  photoGrid.innerHTML = ''; updatePhotoCount();
+  processBtn.disabled = true; clearBtn.style.display = 'none';
+  document.getElementById('progress-section').style.display = 'none';
+  document.getElementById('mapping-section').style.display = 'none';
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('error-log-wrap').innerHTML = '';
+}
+
+// ── CSV download ──────────────────────────────────────────────────────────────
+function downloadCSV() {
+  const qbCols = ['*InvoiceNo','*Customer','*InvoiceDate','*DueDate','Terms','Location','Memo','Item(Product/Service)','ItemDescription','ItemQuantity','ItemRate','*ItemAmount','Service Date'];
+  const keyMap = {
+    '*InvoiceNo': 'InvoiceNo', '*Customer': 'Customer', '*InvoiceDate': 'InvoiceDate',
+    '*DueDate': 'DueDate', 'Terms': 'Terms', 'Location': 'Location', 'Memo': 'Memo',
+    'Item(Product/Service)': 'Item(Product/Service)', 'ItemDescription': 'ItemDescription',
+    'ItemQuantity': 'ItemQuantity', 'ItemRate': 'ItemRate', '*ItemAmount': 'ItemAmount',
+    'Service Date': 'ServiceDate'
+  };
+  const esc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
+  const lines = [qbCols.map(esc).join(',')];
+  finalRows.forEach(r => { lines.push(qbCols.map(col => esc(r[keyMap[col]] || '')).join(',')); });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines.join('\r\n')], {type:'text/csv'}));
+  a.download = 'fox_flowers_quickbooks.csv'; a.click();
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+checkApiStatus();
+loadSavedImages();
+</script>
+</body>
+</html>

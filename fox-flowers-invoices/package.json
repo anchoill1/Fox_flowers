@@ -1,0 +1,15 @@
+{
+  "name": "fox-flowers-invoices",
+  "version": "1.0.0",
+  "description": "Bulk invoice scanner for Fox Flowers → QuickBooks CSV",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "dotenv": "^16.3.1",
+    "node-fetch": "^2.7.0"
+  }
+}
