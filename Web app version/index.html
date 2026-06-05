@@ -1268,10 +1268,6 @@ function exportXLSX() {
         o.vatApplied ? '13.5% S' : '' // TaxCode
       ]);
     });
-    if (mo.length > 0) {
-      const total = mo.reduce(function(sum, o) { return sum + (o.total || 0); }, 0);
-      rows.push(['', '', '', '', '', '', '', 'MONTH TOTAL', total, '']);
-    }
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{wch:22},{wch:14},{wch:14},{wch:16},{wch:14},{wch:40},{wch:10},{wch:10},{wch:14},{wch:30}];
     XLSX.utils.book_append_sheet(wb, ws, monthName);
@@ -1295,6 +1291,7 @@ function exportXLSX() {
 
   XLSX.writeFile(wb, 'fox_flowers_' + year + '.xlsx');
 }
+
 // ═══════════════════════════════════════════════════════════════
 // ACCOUNTS LIST
 // ═══════════════════════════════════════════════════════════════
@@ -1465,22 +1462,18 @@ async function readEmailOrder() {
   status.style.display = 'block';
   document.getElementById('email-preview').style.display = 'none';
 
-  const prompt = `You are reading a flower order email for Fox Flowers, a flower shop in Ireland.
-
-Extract the order details and return ONLY a raw JSON object — no markdown, no code fences.
-
-Fields to extract:
-"customer"      - company or person name placing the order
-"deliveryDate"  - delivery date in YYYY-MM-DD format, or ""
-"deliveryTime"  - delivery time if mentioned (e.g. "9am – 11am", "Before 9am"), or ""
-"deliveryAddr"  - delivery address as a string, or ""
-"poNumber"      - PO number if mentioned, or ""
-"items"         - array of objects with "desc" (string) and "price" (number). If price not given use 0.
-"delivery"      - delivery charge as a number, 0 if not mentioned
-"cardMessage"   - message on card if mentioned, or ""
-
-Email:
-${text}`;
+  const prompt = 'You are reading a flower order email for Fox Flowers, a flower shop in Ireland.\n\n'
+    + 'Extract the order details and return ONLY a raw JSON object — no markdown, no code fences.\n\n'
+    + 'Fields to extract:\n'
+    + '"customer"      - company or person name placing the order\n'
+    + '"deliveryDate"  - delivery date in YYYY-MM-DD format, or ""\n'
+    + '"deliveryTime"  - delivery time if mentioned (e.g. "9am - 11am", "Before 9am"), or ""\n'
+    + '"deliveryAddr"  - delivery address as a string, or ""\n'
+    + '"poNumber"      - PO number if mentioned, or ""\n'
+    + '"items"         - array of objects with "desc" (string) and "price" (number). If price not given use 0.\n'
+    + '"delivery"      - delivery charge as a number, 0 if not mentioned\n'
+    + '"cardMessage"   - message on card if mentioned, or ""\n\n'
+    + 'Email:\n' + text;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
