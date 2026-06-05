@@ -542,6 +542,7 @@
     .nav-btn span.label { display: none; }
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -827,7 +828,10 @@
 <div class="orders-wrap">
   <div class="orders-header">
     <h2>Orders Log</h2>
-    <button class="export-btn" onclick="exportCSV()">⬇ Export CSV for QuickBooks</button>
+    <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+      <select id="export-year" style="padding:0.6rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.88rem;background:#fff;cursor:pointer;"></select>
+      <button class="export-btn" onclick="exportXLSX()">⬇ Export Excel for QuickBooks</button>
+    </div>
   </div>
   <div class="orders-table-wrap">
     <table class="orders-table">
@@ -1170,6 +1174,7 @@ function showToast(msg) {
 // ORDERS TABLE
 // ═══════════════════════════════════════════════════════════════
 function renderOrdersTable() {
+  populateYearPicker();
   const tbody = document.getElementById('orders-tbody');
   if (orders.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="no-orders">No orders yet</td></tr>';
@@ -1195,40 +1200,80 @@ function fmtDate(d) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CSV EXPORT
+// XLSX EXPORT — one tab per month + summary
 // ═══════════════════════════════════════════════════════════════
-function exportCSV() {
-  if (orders.length === 0) { alert('No orders to export.'); return; }
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
 
-  const cols = ['*Customer','*InvoiceDate','*DueDate','Terms','PONumber',
-    'ItemDescription','ItemQuantity','ItemRate','*ItemAmount','Memo'];
-  const esc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
-  const lines = [cols.map(esc).join(',')];
+const QB_COLS = ['*Customer','*InvoiceDate','*DueDate','Terms','PONumber',
+                 'ItemDescription','ItemQuantity','ItemRate','*ItemAmount','Memo'];
 
-  orders.forEach(o => {
-    o.items.forEach((item, i) => {
-      lines.push([
-        o.customer,
-        fmtDate(o.orderDate),
-        fmtDate(o.deliveryDate),
-        'Due on receipt',
-        o.poNumber || '',
-        item.desc,
-        '1',
-        item.price.toFixed(2),
-        i === 0 ? o.total.toFixed(2) : '',   // total only on first row
-        i === 0 ? o.cardMessage : ''
-      ].map(esc).join(','));
-    });
-  });
-
-  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'fox_flowers_' + new Date().toISOString().slice(0,10) + '.csv';
-  a.click();
+function populateYearPicker() {
+  const sel = document.getElementById('export-year');
+  const years = [...new Set(orders.map(o => o.orderDate && o.orderDate.slice(0,4)).filter(Boolean))];
+  if (!years.length) years.push(new Date().getFullYear().toString());
+  years.sort().reverse();
+  const current = sel.value;
+  sel.innerHTML = years.map(y => '<option value="'+y+'">'+y+'</option>').join('');
+  if (current) sel.value = current;
 }
 
+function exportXLSX() {
+  const year = document.getElementById('export-year').value;
+  if (!year) { alert('No year selected.'); return; }
+  const yearOrders = orders.filter(o => o.orderDate && o.orderDate.startsWith(year));
+  if (!yearOrders.length) { alert('No orders found for ' + year); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  MONTHS.forEach(function(monthName, monthIdx) {
+    const monthStr = String(monthIdx + 1).padStart(2, '0');
+    const prefix   = year + '-' + monthStr;
+    const mo       = yearOrders.filter(o => o.orderDate && o.orderDate.startsWith(prefix));
+    const rows     = [QB_COLS.slice()];
+    mo.forEach(function(o) {
+      o.items.forEach(function(item, i) {
+        rows.push([
+          o.customer,
+          fmtDate(o.orderDate),
+          fmtDate(o.deliveryDate),
+          'Due on receipt',
+          o.poNumber || '',
+          item.desc,
+          1,
+          item.price,
+          i === 0 ? o.total : '',
+          i === 0 ? (o.cardMessage || '') : ''
+        ]);
+      });
+    });
+    if (mo.length > 0) {
+      const total = mo.reduce(function(sum, o) { return sum + (o.total || 0); }, 0);
+      rows.push(['', '', '', '', '', '', '', 'MONTH TOTAL', total, '']);
+    }
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:22},{wch:14},{wch:14},{wch:16},{wch:14},{wch:40},{wch:10},{wch:10},{wch:14},{wch:30}];
+    XLSX.utils.book_append_sheet(wb, ws, monthName);
+  });
+
+  // Summary sheet
+  const summaryRows = [['Fox Flowers — ' + year], [], ['Month', 'No. of Orders', 'Total (€)']];
+  let yearTotal = 0;
+  MONTHS.forEach(function(monthName, monthIdx) {
+    const monthStr = String(monthIdx + 1).padStart(2, '0');
+    const mo    = yearOrders.filter(o => o.orderDate && o.orderDate.startsWith(year + '-' + monthStr));
+    const total = mo.reduce(function(sum, o) { return sum + (o.total || 0); }, 0);
+    yearTotal  += total;
+    summaryRows.push([monthName, mo.length, total]);
+  });
+  summaryRows.push([]);
+  summaryRows.push(['YEAR TOTAL', yearOrders.length, yearTotal]);
+  const summaryWs = XLSX.utils.aoa_to_sheet(summaryRows);
+  summaryWs['!cols'] = [{wch:18},{wch:16},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary ' + year);
+
+  XLSX.writeFile(wb, 'fox_flowers_' + year + '.xlsx');
+}
 // ═══════════════════════════════════════════════════════════════
 // ACCOUNTS LIST
 // ═══════════════════════════════════════════════════════════════
