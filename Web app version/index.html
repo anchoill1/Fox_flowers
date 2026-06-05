@@ -1052,14 +1052,15 @@ function nudgeDelivery(delta) {
 }
 
 function recalcTotal() {
-  let subtotal = 0;
+  let itemsOnly = 0;
   document.querySelectorAll('#items-body input.price-input').forEach(inp => {
-    subtotal += parseFloat(inp.value) || 0;
+    itemsOnly += parseFloat(inp.value) || 0;
   });
   const delivery = parseFloat(document.getElementById('delivery-charge').value) || 0;
+  const subtotal = itemsOnly + delivery;
   const vatYes   = document.querySelector('input[name="vat"]:checked')?.value === 'yes';
-  const vatAmt   = vatYes ? (subtotal + delivery) * 0.135 : 0;
-  const total    = subtotal + delivery + vatAmt;
+  const vatAmt   = vatYes ? subtotal * 0.135 : 0;
+  const total    = subtotal + vatAmt;
   document.getElementById('subtotal-display').textContent = '€' + subtotal.toFixed(2);
   document.getElementById('vat-amount').textContent       = vatYes ? '€' + vatAmt.toFixed(2) : '';
   document.getElementById('total-display').textContent    = '€' + total.toFixed(2);
@@ -1213,7 +1214,7 @@ const MONTHS = ['January','February','March','April','May','June',
 
 const QB_COLS = ['*InvoiceNo','*Customer','*InvoiceDate','*DueDate','Terms',
                  'Location','Memo','Item(Product/Service)','ItemDescription',
-                 'ItemQuantity','ItemRate','*ItemAmount','Service Date','PONumber'];
+                 'ItemQuantity','ItemRate','*ItemAmount','Service Date','PONumber','TaxCode'];
 
 function populateYearPicker() {
   const sel = document.getElementById('export-year');
@@ -1239,24 +1240,33 @@ function exportXLSX() {
     const mo       = yearOrders.filter(o => o.orderDate && o.orderDate.startsWith(prefix));
     const rows     = [QB_COLS.slice()];
     mo.forEach(function(o) {
-      o.items.forEach(function(item, i) {
-        rows.push([
-          i === 0 ? (o.invoiceNo || '') : '',  // *InvoiceNo — only on first row
-          i === 0 ? o.customer : '',            // *Customer — only on first row
-          i === 0 ? fmtDate(o.orderDate) : '',  // *InvoiceDate — only on first row
-          i === 0 ? fmtDate(o.deliveryDate) : '',// *DueDate — only on first row
-          i === 0 ? 'Due on receipt' : '',       // Terms — only on first row
-          '',                                    // Location — blank
-          i === 0 ? (o.cardMessage || '') : '',  // Memo
-          '',                                    // Item(Product/Service) — blank
-          item.desc,                             // ItemDescription
-          1,                                     // ItemQuantity
-          item.price,                            // ItemRate
-          item.price,                            // *ItemAmount (per line item)
-          fmtDate(o.deliveryDate),               // Service Date
-          i === 0 ? (o.poNumber || '') : ''      // PONumber — only on first row
-        ]);
+      // Build description: "Cat €10, Dog €20, Horse €30 + Delivery €7"
+      var descParts = o.items.map(function(item) {
+        return item.desc + (item.price ? ' €' + item.price.toFixed(2) : '');
       });
+      if (o.delivery && o.delivery > 0) {
+        descParts.push('Delivery €' + o.delivery.toFixed(2));
+      }
+      var fullDesc = descParts.join(', ');
+      var subtotal = o.items.reduce(function(s, i) { return s + (i.price || 0); }, 0) + (o.delivery || 0);
+
+      rows.push([
+        o.invoiceNo || '',          // *InvoiceNo
+        o.customer,                 // *Customer
+        fmtDate(o.orderDate),       // *InvoiceDate
+        fmtDate(o.deliveryDate),    // *DueDate
+        'Due on receipt',           // Terms
+        '',                         // Location
+        o.cardMessage || '',        // Memo
+        '',                         // Item(Product/Service)
+        fullDesc,                   // ItemDescription — all items + delivery in one string
+        1,                          // ItemQuantity
+        subtotal,                   // ItemRate — subtotal inc delivery
+        o.total,                    // *ItemAmount — total inc VAT if applied
+        fmtDate(o.deliveryDate),    // Service Date
+        o.poNumber || '',           // PONumber
+        o.vatApplied ? '13.5% S' : '' // TaxCode
+      ]);
     });
     if (mo.length > 0) {
       const total = mo.reduce(function(sum, o) { return sum + (o.total || 0); }, 0);
