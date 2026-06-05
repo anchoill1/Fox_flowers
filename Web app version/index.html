@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Fox Flowers — Order Form</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --cream: #f7f3ee;
+    --dark: #1c1c1c;
+    --green: #2d4a3e;
+    --green-light: #3d6b5a;
+    --gold: #c9a84c;
+    --gold-light: #e8cc7a;
+    --border: #ddd6cc;
+    --input-bg: #ffffff;
+    --red: #c0392b;
+    --radius: 10px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--dark);
+    min-height: 100vh;
+    font-size: 16px;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--green);
+    color: #fff;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+  header .nav-links {
+    display: flex;
+    gap: 0.5rem;
+  }
+  header .nav-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  header .nav-btn:hover, header .nav-btn.active {
+    background: rgba(255,255,255,0.25);
+  }
+
+  /* ── Pages ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── Order Form Page ── */
+  .form-wrap {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 4rem;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 0.75rem;
+    margin-top: 1.5rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow);
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .field-row.single { grid-template-columns: 1fr; }
+  .field-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #666;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  input[type="text"], input[type="date"], input[type="email"],
+  input[type="tel"], input[type="number"], select, textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    background: var(--input-bg);
+    color: var(--dark);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(45,74,62,0.1);
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 2.5rem;
+    cursor: pointer;
+  }
+  textarea {
+    resize: vertical;
+    min-height: 90px;
+    line-height: 1.5;
+  }
+
+  /* ── Customer section ── */
+  .customer-select-wrap { position: relative; }
+  #new-customer-wrap {
+    margin-top: 0.75rem;
+    display: none;
+  }
+  #new-customer-wrap.visible { display: block; }
+
+  /* ── PO Number ── */
+  .po-wrap { display: none; }
+  .po-wrap.visible { display: block; }
+
+  /* ── Items table ── */
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.75rem;
+  }
+  .items-table th {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.5rem 0.5rem 0.75rem;
+    text-align: left;
+    border-bottom: 1.5px solid var(--border);
+  }
+  .items-table th.price-col { text-align: right; width: 120px; }
+  .items-table th.del-col   { width: 44px; }
+  .items-table td {
+    padding: 0.4rem 0.4rem;
+    vertical-align: middle;
+  }
+  .items-table tr + tr td { padding-top: 0.5rem; }
+  .items-table input[type="text"] { font-size: 0.95rem; padding: 0.65rem 0.75rem; }
+  .items-table input.price-input {
+    text-align: right;
+    font-size: 0.95rem;
+    padding: 0.65rem 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .del-item-btn {
+    background: none;
+    border: none;
+    color: #bbb;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 4px;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+  .del-item-btn:hover { color: var(--red); }
+
+  .add-item-btn {
+    background: none;
+    border: 1.5px dashed var(--border);
+    color: var(--green);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.15s, border-color 0.15s;
+    margin-top: 0.25rem;
+  }
+  .add-item-btn:hover { background: rgba(45,74,62,0.05); border-color: var(--green); }
+
+  /* ── Totals ── */
+  .totals-wrap {
+    border-top: 1.5px solid var(--border);
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.4rem;
+  }
+  .total-row {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #555;
+  }
+  .total-row span:first-child { min-width: 100px; text-align: right; }
+  .total-row span:last-child { min-width: 80px; text-align: right; font-variant-numeric: tabular-nums; }
+  .total-row.grand {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin-top: 0.25rem;
+    padding-top: 0.5rem;
+    border-top: 1.5px solid var(--border);
+  }
+  .delivery-row input {
+    width: 80px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.9rem;
+    text-align: right;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Payment section ── */
+  .payment-toggle {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .payment-btn {
+    flex: 1;
+    padding: 0.85rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+    color: #666;
+    transition: all 0.2s;
+    font-weight: 400;
+  }
+  .payment-btn.selected {
+    border-color: var(--green);
+    background: rgba(45,74,62,0.06);
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  /* ── Message on card ── */
+  .char-count {
+    font-size: 0.72rem;
+    color: #aaa;
+    text-align: right;
+    margin-top: 0.25rem;
+  }
+
+  /* ── Submit button ── */
+  .submit-btn {
+    width: 100%;
+    padding: 1.1rem;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    cursor: pointer;
+    margin-top: 1.5rem;
+    letter-spacing: 0.02em;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 4px 14px rgba(45,74,62,0.3);
+  }
+  .submit-btn:hover { background: var(--green-light); }
+  .submit-btn:active { transform: scale(0.99); }
+
+  /* ── Success toast ── */
+  #toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--green);
+    color: #fff;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 200;
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Orders Log Page ── */
+  .orders-wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 4rem;
+  }
+  .orders-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .orders-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+  }
+  .export-btn {
+    background: var(--green);
+    color: #fff;
+    border: none;
+    padding: 0.65rem 1.25rem;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .export-btn:hover { background: var(--green-light); }
+
+  .orders-table-wrap { overflow-x: auto; }
+  .orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    background: #fff;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+  .orders-table th {
+    background: var(--green);
+    color: #fff;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 500;
+  }
+  .orders-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f0ebe4;
+    vertical-align: top;
+    max-width: 200px;
+  }
+  .orders-table tr:last-child td { border-bottom: none; }
+  .orders-table tr:hover td { background: #faf8f5; }
+  .badge-paid    { background: #d4edda; color: #1a6b32; padding: 2px 8px; border-radius: 20px; font-size: 0.75rem; white-space: nowrap; }
+  .badge-account { background: #fff3cd; color: #856404; padding: 2px 8px; border-radius: 20px; font-size: 0.75rem; white-space: nowrap; }
+  .no-orders { text-align: center; color: #aaa; padding: 3rem; font-style: italic; }
+
+  /* ── Accounts Page ── */
+  .accounts-wrap {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 4rem;
+  }
+  .accounts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .accounts-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+  }
+  .add-account-btn {
+    background: var(--gold);
+    color: var(--dark);
+    border: none;
+    padding: 0.65rem 1.25rem;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .add-account-btn:hover { background: var(--gold-light); }
+
+  .account-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .account-info { flex: 1; }
+  .account-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    margin-bottom: 0.2rem;
+  }
+  .account-details {
+    font-size: 0.82rem;
+    color: #777;
+    line-height: 1.6;
+  }
+  .account-po-list {
+    font-size: 0.8rem;
+    color: var(--green);
+    margin-top: 0.3rem;
+  }
+  .account-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .btn-sm {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    color: var(--dark);
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .btn-sm:hover { background: var(--cream); }
+  .btn-sm.danger { border-color: #e0b0ad; color: var(--red); }
+  .btn-sm.danger:hover { background: #fff5f5; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    display: none;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 14px;
+    padding: 1.75rem;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    margin-bottom: 1.25rem;
+  }
+  .modal-field { margin-bottom: 1rem; }
+  .modal-field label { display: block; font-size: 0.78rem; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem; }
+  .po-entry-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .po-entry-row input { flex: 1; }
+  .po-entry-row button { padding: 0.65rem 0.75rem; background: none; border: 1.5px solid var(--border); border-radius: 8px; color: var(--red); cursor: pointer; font-size: 0.9rem; }
+  .add-po-btn { background: none; border: 1.5px dashed var(--border); color: var(--green); font-family: 'DM Sans', sans-serif; font-size: 0.85rem; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; width: 100%; margin-bottom: 1rem; }
+  .modal-btns { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+  .modal-btns button { flex: 1; padding: 0.85rem; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; }
+  .btn-cancel { background: #fff; border: 1.5px solid var(--border); color: #666; }
+  .btn-cancel:hover { background: var(--cream); }
+  .btn-save { background: var(--green); border: none; color: #fff; font-weight: 500; }
+  .btn-save:hover { background: var(--green-light); }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .field-row { grid-template-columns: 1fr; }
+    .field-row.triple { grid-template-columns: 1fr 1fr; }
+    header h1 { font-size: 1.1rem; }
+    .nav-btn span.label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌸 Fox Flowers</h1>
+  <div class="nav-links">
+    <button class="nav-btn active" onclick="showPage('order')">New Order</button>
+    <button class="nav-btn" onclick="showPage('orders')">Orders</button>
+    <button class="nav-btn" onclick="showPage('accounts')">Accounts</button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════ ORDER FORM PAGE -->
+<div id="page-order" class="page active">
+<div class="form-wrap">
+
+  <!-- Dates -->
+  <div class="section-title">Order Details</div>
+  <div class="card">
+    <div class="field-row">
+      <div class="field">
+        <label>Order Date</label>
+        <input type="date" id="order-date" readonly style="background:#f9f9f9;color:#555;">
+      </div>
+      <div class="field">
+        <label>Delivery Date</label>
+        <input type="date" id="delivery-date">
+      </div>
+    </div>
+    <div class="field-row triple">
+      <div class="field">
+        <label>Delivery Time</label>
+        <select id="delivery-time">
+          <option value="">Select time…</option>
+          <option>Before 9am</option>
+          <option>9am – 11am</option>
+          <option>11am – 1pm</option>
+          <option>1pm – 3pm</option>
+          <option>3pm – 5pm</option>
+          <option>After 5pm</option>
+          <option>Anytime</option>
+          <option>Collection</option>
+        </select>
+      </div>
+      <div class="field" style="grid-column: span 2;">
+        <label>Delivery Address</label>
+        <input type="text" id="delivery-address" placeholder="Write delivery address here…">
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer -->
+  <div class="section-title">Customer</div>
+  <div class="card">
+    <div class="field-row">
+      <div class="field">
+        <label>Customer Account</label>
+        <div class="customer-select-wrap">
+          <select id="customer-select" onchange="onCustomerChange()">
+            <option value="">Select customer…</option>
+            <option value="__new__">+ New customer…</option>
+          </select>
+        </div>
+        <div id="new-customer-wrap">
+          <input type="text" id="new-customer-name" placeholder="Enter new customer name…" style="margin-top:0.5rem;">
+        </div>
+      </div>
+      <div class="field po-wrap" id="po-wrap">
+        <label>PO Number</label>
+        <select id="po-select">
+          <option value="">Select PO…</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div class="section-title">Items Required</div>
+  <div class="card">
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Item Description</th>
+          <th class="price-col">Price (€)</th>
+          <th class="del-col"></th>
+        </tr>
+      </thead>
+      <tbody id="items-body">
+      </tbody>
+    </table>
+    <button class="add-item-btn" onclick="addItem()">+ Add item</button>
+
+    <div class="totals-wrap">
+      <div class="total-row">
+        <span>Items subtotal</span>
+        <span id="subtotal-display">€0.00</span>
+      </div>
+      <div class="total-row delivery-row">
+        <span>Delivery</span>
+        <input type="number" id="delivery-charge" value="0" min="0" step="0.01" onInput="recalcTotal()">
+      </div>
+      <div class="total-row grand">
+        <span>Total</span>
+        <span id="total-display">€0.00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment -->
+  <div class="section-title">Payment</div>
+  <div class="card">
+    <div class="payment-toggle">
+      <button class="payment-btn selected" id="pay-paid" onclick="selectPayment('paid')">💳 Paid</button>
+      <button class="payment-btn" id="pay-account" onclick="selectPayment('account')">📋 Account</button>
+    </div>
+    <div id="account-note" style="display:none; font-size:0.85rem; color:var(--green); background:rgba(45,74,62,0.07); padding:0.6rem 0.9rem; border-radius:6px;">
+      This order will be saved to the accounts spreadsheet for invoicing.
+    </div>
+  </div>
+
+  <!-- Message on card -->
+  <div class="section-title">Message on Card</div>
+  <div class="card">
+    <div class="field">
+      <label>Card Message <span style="font-weight:300;text-transform:none;letter-spacing:0;">(optional)</span></label>
+      <textarea id="card-message" placeholder="Write the message for the card here…" maxlength="200" oninput="updateCharCount()"></textarea>
+      <div class="char-count"><span id="char-count">0</span> / 200</div>
+    </div>
+  </div>
+
+  <button class="submit-btn" onclick="submitOrder()">Save Order →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ ORDERS PAGE -->
+<div id="page-orders" class="page">
+<div class="orders-wrap">
+  <div class="orders-header">
+    <h2>Orders Log</h2>
+    <button class="export-btn" onclick="exportCSV()">⬇ Export CSV for QuickBooks</button>
+  </div>
+  <div class="orders-table-wrap">
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Customer</th>
+          <th>PO #</th>
+          <th>Delivery</th>
+          <th>Items</th>
+          <th>Total</th>
+          <th>Payment</th>
+        </tr>
+      </thead>
+      <tbody id="orders-tbody">
+        <tr><td colspan="7" class="no-orders">No orders yet</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ ACCOUNTS PAGE -->
+<div id="page-accounts" class="page">
+<div class="accounts-wrap">
+  <div class="accounts-header">
+    <h2>Customer Accounts</h2>
+    <button class="add-account-btn" onclick="openAccountModal()">+ Add Account</button>
+  </div>
+  <div id="accounts-list"></div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ ACCOUNT MODAL -->
+<div class="modal-overlay" id="account-modal">
+  <div class="modal">
+    <h3 id="modal-title">Add Customer Account</h3>
+    <input type="hidden" id="edit-account-id">
+
+    <div class="modal-field">
+      <label>Company / Customer Name *</label>
+      <input type="text" id="acc-name" placeholder="e.g. Musgrave, HSE, UCC">
+    </div>
+    <div class="modal-field" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+      <div>
+        <label>Contact Name</label>
+        <input type="text" id="acc-contact" placeholder="First Last">
+      </div>
+      <div>
+        <label>Phone</label>
+        <input type="tel" id="acc-phone" placeholder="087 000 0000">
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Email</label>
+      <input type="email" id="acc-email" placeholder="accounts@company.ie">
+    </div>
+    <div class="modal-field">
+      <label>Address</label>
+      <textarea id="acc-address" placeholder="Street, City, County" style="min-height:70px;"></textarea>
+    </div>
+    <div class="modal-field">
+      <label>PO Numbers (add one per line — multiple allowed)</label>
+      <div id="po-inputs"></div>
+      <button class="add-po-btn" onclick="addPOInput()">+ Add another PO number</button>
+    </div>
+    <div class="modal-field">
+      <label>Notes</label>
+      <input type="text" id="acc-notes" placeholder="e.g. Invoice monthly, ring before delivery">
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAccountModal()">Cancel</button>
+      <button class="btn-save" onclick="saveAccount()">Save Account</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">✓ Order saved successfully</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DATA — stored in localStorage
+// ═══════════════════════════════════════════════════════════════
+
+function loadData(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; }
+}
+function saveData(key, val) {
+  localStorage.setItem(key, JSON.stringify(val));
+}
+
+let accounts = loadData('ff_accounts', [
+  { id: 'acc_1', name: 'Musgrave', contact: '', phone: '', email: '', address: 'Musgrave Marketplace, Ballycurreen, Cork', notes: 'Monthly account', poNumbers: ['PO-MUS-001'] },
+  { id: 'acc_2', name: 'HSE', contact: '', phone: '', email: '', address: 'HSE Head Office, Dr. Steevens Hospital, Dublin 8', notes: '', poNumbers: ['PO-HSE-2026'] },
+  { id: 'acc_3', name: 'UCC', contact: '', phone: '', email: 'accounts@ucc.ie', address: 'University College Cork, Cork', notes: '', poNumbers: ['PO-UCC-A1', 'PO-UCC-B2', 'PO-UCC-C3'] },
+  { id: 'acc_4', name: 'Fiachra Restaurant', contact: 'Julie Durel', phone: '087 1309322', email: '', address: 'Douglas, Cork', notes: '', poNumbers: [] },
+  { id: 'acc_5', name: 'Citco', contact: '', phone: '', email: '', address: '', notes: '', poNumbers: [] },
+  { id: 'acc_6', name: 'Mercy Hospital', contact: '', phone: '', email: '', address: 'Grenville Place, Cork', notes: '', poNumbers: [] },
+  { id: 'acc_7', name: 'Sacred Heart Church', contact: '', phone: '', email: '', address: 'Western Road, Cork', notes: '', poNumbers: [] },
+]);
+let orders = loadData('ff_orders', []);
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'orders')   renderOrdersTable();
+  if (name === 'accounts') renderAccountsList();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ORDER FORM — init
+// ═══════════════════════════════════════════════════════════════
+function initForm() {
+  // Set today's date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('order-date').value = today;
+
+  // Set tomorrow as default delivery
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+  document.getElementById('delivery-date').value = tomorrow.toISOString().split('T')[0];
+
+  // Populate customer dropdown
+  rebuildCustomerDropdown();
+
+  // Add first item row
+  addItem();
+}
+
+function rebuildCustomerDropdown() {
+  const sel = document.getElementById('customer-select');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Select customer…</option>';
+  accounts.sort((a,b) => a.name.localeCompare(b.name)).forEach(acc => {
+    const opt = document.createElement('option');
+    opt.value = acc.id; opt.textContent = acc.name;
+    sel.appendChild(opt);
+  });
+  const newOpt = document.createElement('option');
+  newOpt.value = '__new__'; newOpt.textContent = '+ New customer…';
+  sel.appendChild(newOpt);
+  if (current) sel.value = current;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOMER / PO LOGIC
+// ═══════════════════════════════════════════════════════════════
+function onCustomerChange() {
+  const val = document.getElementById('customer-select').value;
+  const newWrap = document.getElementById('new-customer-wrap');
+  const poWrap  = document.getElementById('po-wrap');
+  const poSel   = document.getElementById('po-select');
+
+  if (val === '__new__') {
+    newWrap.classList.add('visible');
+    poWrap.classList.remove('visible');
+  } else if (val) {
+    newWrap.classList.remove('visible');
+    const acc = accounts.find(a => a.id === val);
+    if (acc && acc.poNumbers && acc.poNumbers.length > 0) {
+      poSel.innerHTML = '<option value="">Select PO…</option>' +
+        acc.poNumbers.map(p => `<option value="${p}">${p}</option>`).join('');
+      poWrap.classList.add('visible');
+    } else {
+      poWrap.classList.remove('visible');
+    }
+  } else {
+    newWrap.classList.remove('visible');
+    poWrap.classList.remove('visible');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ITEMS
+// ═══════════════════════════════════════════════════════════════
+let itemCount = 0;
+
+function addItem() {
+  const id = ++itemCount;
+  const tr = document.createElement('tr');
+  tr.id = 'item-' + id;
+  tr.innerHTML = `
+    <td><input type="text" placeholder="e.g. Bridal bouquet, Altar arrangement…" oninput="recalcTotal()"></td>
+    <td><input type="number" class="price-input" placeholder="0.00" min="0" step="0.01" oninput="recalcTotal()"></td>
+    <td><button class="del-item-btn" onclick="removeItem(${id})">✕</button></td>
+  `;
+  document.getElementById('items-body').appendChild(tr);
+}
+
+function removeItem(id) {
+  const el = document.getElementById('item-' + id);
+  if (el) el.remove();
+  recalcTotal();
+}
+
+function recalcTotal() {
+  let subtotal = 0;
+  document.querySelectorAll('#items-body input.price-input').forEach(inp => {
+    subtotal += parseFloat(inp.value) || 0;
+  });
+  const delivery = parseFloat(document.getElementById('delivery-charge').value) || 0;
+  const total = subtotal + delivery;
+  document.getElementById('subtotal-display').textContent = '€' + subtotal.toFixed(2);
+  document.getElementById('total-display').textContent    = '€' + total.toFixed(2);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PAYMENT
+// ═══════════════════════════════════════════════════════════════
+let paymentType = 'paid';
+
+function selectPayment(type) {
+  paymentType = type;
+  document.getElementById('pay-paid').classList.toggle('selected', type === 'paid');
+  document.getElementById('pay-account').classList.toggle('selected', type === 'account');
+  document.getElementById('account-note').style.display = type === 'account' ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CARD MESSAGE
+// ═══════════════════════════════════════════════════════════════
+function updateCharCount() {
+  const len = document.getElementById('card-message').value.length;
+  document.getElementById('char-count').textContent = len;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SUBMIT ORDER
+// ═══════════════════════════════════════════════════════════════
+function submitOrder() {
+  const custSel  = document.getElementById('customer-select').value;
+  const custName = custSel === '__new__'
+    ? (document.getElementById('new-customer-name').value.trim() || 'Unknown')
+    : custSel ? (accounts.find(a => a.id === custSel)?.name || '') : '';
+
+  if (!custName) { alert('Please select or enter a customer.'); return; }
+
+  // Gather items
+  const itemRows = [];
+  document.querySelectorAll('#items-body tr').forEach(tr => {
+    const inputs = tr.querySelectorAll('input');
+    const desc  = inputs[0]?.value?.trim();
+    const price = parseFloat(inputs[1]?.value) || 0;
+    if (desc) itemRows.push({ desc, price });
+  });
+
+  if (itemRows.length === 0) { alert('Please add at least one item.'); return; }
+
+  let subtotal = 0;
+  itemRows.forEach(r => subtotal += r.price);
+  const delivery = parseFloat(document.getElementById('delivery-charge').value) || 0;
+
+  const order = {
+    id:           'ord_' + Date.now(),
+    orderDate:    document.getElementById('order-date').value,
+    deliveryDate: document.getElementById('delivery-date').value,
+    deliveryTime: document.getElementById('delivery-time').value,
+    deliveryAddr: document.getElementById('delivery-address').value.trim(),
+    customer:     custName,
+    customerId:   custSel !== '__new__' ? custSel : null,
+    poNumber:     document.getElementById('po-select').value || '',
+    items:        itemRows,
+    subtotal:     subtotal,
+    delivery:     delivery,
+    total:        subtotal + delivery,
+    payment:      paymentType,
+    cardMessage:  document.getElementById('card-message').value.trim(),
+    createdAt:    new Date().toISOString()
+  };
+
+  orders.push(order);
+  saveData('ff_orders', orders);
+
+  showToast('✓ Order saved' + (paymentType === 'account' ? ' — added to accounts' : ''));
+  resetForm();
+}
+
+function resetForm() {
+  const today    = new Date().toISOString().split('T')[0];
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+  document.getElementById('order-date').value    = today;
+  document.getElementById('delivery-date').value  = tomorrow.toISOString().split('T')[0];
+  document.getElementById('delivery-time').value  = '';
+  document.getElementById('delivery-address').value = '';
+  document.getElementById('customer-select').value  = '';
+  document.getElementById('new-customer-name').value = '';
+  document.getElementById('new-customer-wrap').classList.remove('visible');
+  document.getElementById('po-wrap').classList.remove('visible');
+  document.getElementById('card-message').value = '';
+  document.getElementById('char-count').textContent = '0';
+  document.getElementById('delivery-charge').value = '0';
+  document.getElementById('account-note').style.display = 'none';
+  document.getElementById('pay-paid').classList.add('selected');
+  document.getElementById('pay-account').classList.remove('selected');
+  paymentType = 'paid';
+  document.getElementById('items-body').innerHTML = '';
+  itemCount = 0;
+  addItem();
+  recalcTotal();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ORDERS TABLE
+// ═══════════════════════════════════════════════════════════════
+function renderOrdersTable() {
+  const tbody = document.getElementById('orders-tbody');
+  if (orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="no-orders">No orders yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = [...orders].reverse().map(o => `
+    <tr>
+      <td>${fmtDate(o.orderDate)}</td>
+      <td><strong>${o.customer}</strong></td>
+      <td>${o.poNumber || '—'}</td>
+      <td>${fmtDate(o.deliveryDate)}<br><small style="color:#aaa;">${o.deliveryTime || ''}</small></td>
+      <td style="font-size:0.82rem;">${o.items.map(i => `${i.desc} — €${i.price.toFixed(2)}`).join('<br>')}</td>
+      <td style="font-weight:600;">€${o.total.toFixed(2)}</td>
+      <td><span class="badge-${o.payment}">${o.payment === 'paid' ? 'Paid' : 'Account'}</span></td>
+    </tr>
+  `).join('');
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CSV EXPORT
+// ═══════════════════════════════════════════════════════════════
+function exportCSV() {
+  if (orders.length === 0) { alert('No orders to export.'); return; }
+
+  const cols = ['*Customer','*InvoiceDate','*DueDate','Terms','PONumber',
+    'ItemDescription','ItemQuantity','ItemRate','*ItemAmount','Memo'];
+  const esc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
+  const lines = [cols.map(esc).join(',')];
+
+  orders.forEach(o => {
+    o.items.forEach((item, i) => {
+      lines.push([
+        o.customer,
+        fmtDate(o.orderDate),
+        fmtDate(o.deliveryDate),
+        'Due on receipt',
+        o.poNumber || '',
+        item.desc,
+        '1',
+        item.price.toFixed(2),
+        i === 0 ? o.total.toFixed(2) : '',   // total only on first row
+        i === 0 ? o.cardMessage : ''
+      ].map(esc).join(','));
+    });
+  });
+
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'fox_flowers_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ACCOUNTS LIST
+// ═══════════════════════════════════════════════════════════════
+function renderAccountsList() {
+  const el = document.getElementById('accounts-list');
+  if (accounts.length === 0) {
+    el.innerHTML = '<p style="color:#aaa;text-align:center;padding:2rem;">No accounts yet.</p>';
+    return;
+  }
+  el.innerHTML = [...accounts].sort((a,b) => a.name.localeCompare(b.name)).map(acc => `
+    <div class="account-card">
+      <div class="account-info">
+        <div class="account-name">${acc.name}</div>
+        <div class="account-details">
+          ${acc.contact ? acc.contact + '<br>' : ''}
+          ${acc.email   ? acc.email + '<br>'   : ''}
+          ${acc.phone   ? acc.phone + '<br>'   : ''}
+          ${acc.address ? acc.address          : ''}
+        </div>
+        ${acc.poNumbers?.length ? `<div class="account-po-list">PO: ${acc.poNumbers.join(' · ')}</div>` : ''}
+        ${acc.notes ? `<div style="font-size:0.78rem;color:#aaa;margin-top:0.3rem;font-style:italic;">${acc.notes}</div>` : ''}
+      </div>
+      <div class="account-actions">
+        <button class="btn-sm" onclick="openAccountModal('${acc.id}')">Edit</button>
+        <button class="btn-sm danger" onclick="deleteAccount('${acc.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ACCOUNT MODAL
+// ═══════════════════════════════════════════════════════════════
+function openAccountModal(id) {
+  document.getElementById('modal-title').textContent = id ? 'Edit Account' : 'Add Customer Account';
+  document.getElementById('edit-account-id').value = id || '';
+  document.getElementById('acc-name').value    = '';
+  document.getElementById('acc-contact').value = '';
+  document.getElementById('acc-phone').value   = '';
+  document.getElementById('acc-email').value   = '';
+  document.getElementById('acc-address').value = '';
+  document.getElementById('acc-notes').value   = '';
+  document.getElementById('po-inputs').innerHTML = '';
+
+  if (id) {
+    const acc = accounts.find(a => a.id === id);
+    if (acc) {
+      document.getElementById('acc-name').value    = acc.name;
+      document.getElementById('acc-contact').value = acc.contact || '';
+      document.getElementById('acc-phone').value   = acc.phone   || '';
+      document.getElementById('acc-email').value   = acc.email   || '';
+      document.getElementById('acc-address').value = acc.address || '';
+      document.getElementById('acc-notes').value   = acc.notes   || '';
+      (acc.poNumbers || []).forEach(po => addPOInput(po));
+    }
+  }
+  if (document.getElementById('po-inputs').children.length === 0) addPOInput();
+  document.getElementById('account-modal').classList.add('open');
+}
+
+function closeAccountModal() {
+  document.getElementById('account-modal').classList.remove('open');
+}
+
+function addPOInput(val) {
+  const wrap = document.getElementById('po-inputs');
+  const row  = document.createElement('div');
+  row.className = 'po-entry-row';
+  row.innerHTML = `<input type="text" placeholder="e.g. PO-UCC-001" value="${val||''}"><button onclick="this.parentElement.remove()" title="Remove">✕</button>`;
+  wrap.appendChild(row);
+}
+
+function saveAccount() {
+  const name = document.getElementById('acc-name').value.trim();
+  if (!name) { alert('Please enter a customer name.'); return; }
+
+  const poNumbers = [...document.querySelectorAll('#po-inputs input')]
+    .map(i => i.value.trim()).filter(Boolean);
+
+  const data = {
+    name,
+    contact:   document.getElementById('acc-contact').value.trim(),
+    phone:     document.getElementById('acc-phone').value.trim(),
+    email:     document.getElementById('acc-email').value.trim(),
+    address:   document.getElementById('acc-address').value.trim(),
+    notes:     document.getElementById('acc-notes').value.trim(),
+    poNumbers
+  };
+
+  const editId = document.getElementById('edit-account-id').value;
+  if (editId) {
+    const idx = accounts.findIndex(a => a.id === editId);
+    if (idx > -1) accounts[idx] = { ...accounts[idx], ...data };
+  } else {
+    accounts.push({ id: 'acc_' + Date.now(), ...data });
+  }
+
+  saveData('ff_accounts', accounts);
+  closeAccountModal();
+  renderAccountsList();
+  rebuildCustomerDropdown();
+  showToast('✓ Account saved');
+}
+
+function deleteAccount(id) {
+  if (!confirm('Delete this account?')) return;
+  accounts = accounts.filter(a => a.id !== id);
+  saveData('ff_accounts', accounts);
+  renderAccountsList();
+  rebuildCustomerDropdown();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+initForm();
+</script>
+</body>
+</html>
