@@ -631,6 +631,18 @@
         <span>Delivery</span>
         <input type="number" id="delivery-charge" value="0" min="0" step="0.01" onInput="recalcTotal()">
       </div>
+      <div class="total-row">
+        <span>VAT (13.5%)</span>
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.88rem;font-weight:400;text-transform:none;letter-spacing:0;color:#555;cursor:pointer;">
+            <input type="radio" name="vat" value="no" checked onchange="recalcTotal()" style="width:auto;border:none;box-shadow:none;padding:0;"> No
+          </label>
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.88rem;font-weight:400;text-transform:none;letter-spacing:0;color:#555;cursor:pointer;">
+            <input type="radio" name="vat" value="yes" onchange="recalcTotal()" style="width:auto;border:none;box-shadow:none;padding:0;"> Yes
+          </label>
+          <span id="vat-amount" style="min-width:60px;text-align:right;font-variant-numeric:tabular-nums;color:#555;"></span>
+        </div>
+      </div>
       <div class="total-row grand">
         <span>Total</span>
         <span id="total-display">€0.00</span>
@@ -876,8 +888,11 @@ function recalcTotal() {
     subtotal += parseFloat(inp.value) || 0;
   });
   const delivery = parseFloat(document.getElementById('delivery-charge').value) || 0;
-  const total = subtotal + delivery;
+  const vatYes   = document.querySelector('input[name="vat"]:checked')?.value === 'yes';
+  const vatAmt   = vatYes ? (subtotal + delivery) * 0.135 : 0;
+  const total    = subtotal + delivery + vatAmt;
   document.getElementById('subtotal-display').textContent = '€' + subtotal.toFixed(2);
+  document.getElementById('vat-amount').textContent       = vatYes ? '€' + vatAmt.toFixed(2) : '';
   document.getElementById('total-display').textContent    = '€' + total.toFixed(2);
 }
 
@@ -940,6 +955,8 @@ function submitOrder() {
     subtotal:     subtotal,
     delivery:     delivery,
     total:        subtotal + delivery,
+    vatApplied:   document.querySelector('input[name="vat"]:checked')?.value === 'yes',
+    vatAmount:    (() => { const vatYes = document.querySelector('input[name="vat"]:checked')?.value === 'yes'; const base = subtotal + delivery; return vatYes ? base * 0.135 : 0; })(),
     payment:      paymentType,
     cardMessage:  document.getElementById('card-message').value.trim(),
     createdAt:    new Date().toISOString()
@@ -967,6 +984,8 @@ function resetForm() {
   document.getElementById('char-count').textContent = '0';
   document.getElementById('delivery-charge').value = '0';
   document.getElementById('account-note').style.display = 'none';
+  document.querySelector('input[name="vat"][value="no"]').checked = true;
+  document.getElementById('vat-amount').textContent = '';
   document.getElementById('pay-paid').classList.add('selected');
   document.getElementById('pay-account').classList.remove('selected');
   paymentType = 'paid';
