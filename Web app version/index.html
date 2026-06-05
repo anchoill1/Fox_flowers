@@ -708,6 +708,21 @@
 <div id="page-email" class="page">
 <div class="form-wrap">
 
+  <div class="section-title">API Key</div>
+  <div class="card" id="apikey-card">
+    <div class="field-row" style="align-items:flex-end;">
+      <div class="field">
+        <label>Anthropic API Key</label>
+        <input type="password" id="apikey-input" placeholder="sk-ant-..." oninput="checkApiKey()">
+      </div>
+      <div class="field" style="flex:0 0 auto;">
+        <button class="submit-btn" onclick="saveApiKey()" style="margin-top:0;padding:0.9rem 1.5rem;font-size:0.95rem;width:auto;">Save Key</button>
+      </div>
+    </div>
+    <div id="apikey-status" style="font-size:0.82rem;margin-top:0.5rem;display:none;"></div>
+    <p style="font-size:0.78rem;color:#aaa;margin-top:0.5rem;">Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--green);">console.anthropic.com</a> → API Keys. Saved locally in your browser.</p>
+  </div>
+
   <div class="section-title">Paste Email</div>
   <div class="card">
     <div class="field">
@@ -926,6 +941,7 @@ function showPage(name) {
   event.target.classList.add('active');
   if (name === 'orders')   renderOrdersTable();
   if (name === 'accounts') renderAccountsList();
+  if (name === 'email')    loadApiKeyField();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1331,12 +1347,48 @@ function deleteAccount(id) {
 let epPaymentType = 'paid';
 let epItemCount   = 0;
 
+function saveApiKey() {
+  const key = document.getElementById('apikey-input').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    alert('That does not look like a valid Anthropic API key — it should start with sk-ant-');
+    return;
+  }
+  localStorage.setItem('ff_apikey', key);
+  const s = document.getElementById('apikey-status');
+  s.style.display = 'block';
+  s.style.color = 'var(--green)';
+  s.textContent = '✓ Key saved — you can now read emails';
+}
+
+function checkApiKey() {
+  const key = document.getElementById('apikey-input').value.trim();
+  const s   = document.getElementById('apikey-status');
+  if (key && !key.startsWith('sk-ant-')) {
+    s.style.display = 'block';
+    s.style.color   = '#c0392b';
+    s.textContent   = 'Key should start with sk-ant-…';
+  } else {
+    s.style.display = 'none';
+  }
+}
+
+function loadApiKeyField() {
+  const saved = localStorage.getItem('ff_apikey') || '';
+  if (saved) {
+    document.getElementById('apikey-input').value = saved;
+    const s = document.getElementById('apikey-status');
+    s.style.display = 'block';
+    s.style.color   = 'var(--green)';
+    s.textContent   = '✓ Key saved';
+  }
+}
+
 async function readEmailOrder() {
   const text = document.getElementById('email-paste').value.trim();
   if (!text) { alert('Please paste an email first.'); return; }
 
-  const apiKey = await api.getSetting('apiKey');
-  if (!apiKey) { alert('Please save your Anthropic API key first (go to New Order page).'); return; }
+  const apiKey = localStorage.getItem('ff_apikey') || '';
+  if (!apiKey) { alert('Please enter your Anthropic API key in the box at the top of this page.'); return; }
 
   const btn    = document.getElementById('read-email-btn');
   const status = document.getElementById('email-status');
