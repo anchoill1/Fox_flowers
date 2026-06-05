@@ -627,9 +627,24 @@
         <span>Items subtotal</span>
         <span id="subtotal-display">€0.00</span>
       </div>
-      <div class="total-row delivery-row">
+      <div class="total-row">
         <span>Delivery</span>
-        <input type="number" id="delivery-charge" value="0" min="0" step="0.01" onInput="recalcTotal()">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.88rem;font-weight:400;text-transform:none;letter-spacing:0;color:#555;cursor:pointer;">
+            <input type="radio" name="delivery-yn" value="no" checked onchange="toggleDelivery()" style="width:auto;border:none;box-shadow:none;padding:0;"> No
+          </label>
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.88rem;font-weight:400;text-transform:none;letter-spacing:0;color:#555;cursor:pointer;">
+            <input type="radio" name="delivery-yn" value="yes" onchange="toggleDelivery()" style="width:auto;border:none;box-shadow:none;padding:0;"> Yes
+          </label>
+        </div>
+      </div>
+      <div id="delivery-amount-row" style="display:none;" class="total-row">
+        <span>Delivery charge</span>
+        <div style="display:flex;align-items:center;gap:0;">
+          <button onclick="nudgeDelivery(-1)" style="width:36px;height:40px;border:1.5px solid var(--border);border-right:none;border-radius:8px 0 0 8px;background:#fff;font-size:1.1rem;cursor:pointer;color:#555;line-height:1;">−</button>
+          <input type="number" id="delivery-charge" value="0" min="0" step="1" oninput="recalcTotal()" style="width:70px;text-align:center;border-radius:0;border:1.5px solid var(--border);padding:0.5rem 0.25rem;font-size:1rem;font-variant-numeric:tabular-nums;">
+          <button onclick="nudgeDelivery(1)" style="width:36px;height:40px;border:1.5px solid var(--border);border-left:none;border-radius:0 8px 8px 0;background:#fff;font-size:1.1rem;cursor:pointer;color:#555;line-height:1;">+</button>
+        </div>
       </div>
       <div class="total-row">
         <span>VAT (13.5%)</span>
@@ -882,6 +897,20 @@ function removeItem(id) {
   recalcTotal();
 }
 
+function toggleDelivery() {
+  const yes = document.querySelector('input[name="delivery-yn"]:checked')?.value === 'yes';
+  document.getElementById('delivery-amount-row').style.display = yes ? 'flex' : 'none';
+  if (!yes) document.getElementById('delivery-charge').value = 0;
+  recalcTotal();
+}
+
+function nudgeDelivery(delta) {
+  const inp = document.getElementById('delivery-charge');
+  const val = (parseFloat(inp.value) || 0) + delta;
+  inp.value = Math.max(0, val);
+  recalcTotal();
+}
+
 function recalcTotal() {
   let subtotal = 0;
   document.querySelectorAll('#items-body input.price-input').forEach(inp => {
@@ -986,6 +1015,9 @@ function resetForm() {
   document.getElementById('account-note').style.display = 'none';
   document.querySelector('input[name="vat"][value="no"]').checked = true;
   document.getElementById('vat-amount').textContent = '';
+  document.querySelector('input[name="delivery-yn"][value="no"]').checked = true;
+  document.getElementById('delivery-amount-row').style.display = 'none';
+  document.getElementById('delivery-charge').value = 0;
   document.getElementById('pay-paid').classList.add('selected');
   document.getElementById('pay-account').classList.remove('selected');
   paymentType = 'paid';
