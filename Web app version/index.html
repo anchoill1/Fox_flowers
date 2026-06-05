@@ -193,12 +193,31 @@
     vertical-align: middle;
   }
   .items-table tr + tr td { padding-top: 0.5rem; }
-  .items-table input[type="text"] { font-size: 1.05rem; padding: 0.9rem 0.85rem; min-height: 52px; }
+  .items-table input[type="text"] { font-size: 1.05rem; padding: 0.9rem 0.85rem; min-height: 60px; }
+  .items-table textarea.item-desc {
+    font-size: 1.05rem;
+    padding: 0.9rem 0.85rem;
+    min-height: 60px;
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    resize: none;
+    line-height: 1.4;
+    -webkit-appearance: none;
+    appearance: none;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .items-table textarea.item-desc:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(45,74,62,0.1);
+  }
   .items-table input.price-input {
     text-align: right;
     font-size: 1.05rem;
     padding: 0.9rem 0.85rem;
-    min-height: 52px;
+    min-height: 60px;
     font-variant-numeric: tabular-nums;
   }
   .del-item-btn {
@@ -215,19 +234,21 @@
   .del-item-btn:hover { color: var(--red); }
 
   .add-item-btn {
-    background: none;
-    border: 1.5px dashed var(--border);
-    color: var(--green);
+    background: var(--green);
+    border: none;
+    color: #fff;
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.88rem;
-    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    padding: 1rem;
     border-radius: 8px;
     cursor: pointer;
     width: 100%;
-    transition: background 0.15s, border-color 0.15s;
-    margin-top: 0.25rem;
+    transition: background 0.15s;
+    margin-top: 0.75rem;
+    min-height: 52px;
+    letter-spacing: 0.02em;
   }
-  .add-item-btn:hover { background: rgba(45,74,62,0.05); border-color: var(--green); }
+  .add-item-btn:hover { background: var(--green-light); }
 
   /* ── Totals ── */
   .totals-wrap {
@@ -1023,11 +1044,9 @@ function addItem() {
   const id = ++itemCount;
   const tr = document.createElement('tr');
   tr.id = 'item-' + id;
-  tr.innerHTML = `
-    <td><input type="text" placeholder="e.g. Bridal bouquet, Altar arrangement…" oninput="recalcTotal()"></td>
-    <td><input type="number" class="price-input" placeholder="0.00" min="0" step="0.01" oninput="recalcTotal()"></td>
-    <td><button class="del-item-btn" onclick="removeItem(${id})">✕</button></td>
-  `;
+  tr.innerHTML = '<td><textarea class="item-desc" rows="2" placeholder="e.g. Bridal bouquet, Altar arrangement…" oninput="recalcTotal()"></textarea></td>'
+    + '<td><input type="number" class="price-input" placeholder="0.00" min="0" step="0.01" oninput="recalcTotal()"></td>'
+    + '<td><button class="del-item-btn" onclick="removeItem(' + id + ')">✕</button></td>';
   document.getElementById('items-body').appendChild(tr);
 }
 
@@ -1100,9 +1119,8 @@ function submitOrder() {
   // Gather items
   const itemRows = [];
   document.querySelectorAll('#items-body tr').forEach(tr => {
-    const inputs = tr.querySelectorAll('input');
-    const desc  = inputs[0]?.value?.trim();
-    const price = parseFloat(inputs[1]?.value) || 0;
+    const desc  = tr.querySelector('textarea.item-desc')?.value?.trim();
+    const price = parseFloat(tr.querySelector('input.price-input')?.value) || 0;
     if (desc) itemRows.push({ desc, price });
   });
 
