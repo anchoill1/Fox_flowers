@@ -563,10 +563,14 @@
   <!-- Dates -->
   <div class="section-title">Order Details</div>
   <div class="card">
-    <div class="field-row">
+    <div class="field-row triple">
       <div class="field">
         <label>Order Date</label>
         <input type="date" id="order-date" readonly style="background:#f9f9f9;color:#555;">
+      </div>
+      <div class="field">
+        <label>Invoice No</label>
+        <input type="text" id="invoice-no" placeholder="e.g. 1001">
       </div>
       <div class="field">
         <label>Delivery Date</label>
@@ -1109,6 +1113,7 @@ function submitOrder() {
 
   const order = {
     id:           'ord_' + Date.now(),
+    invoiceNo:    document.getElementById('invoice-no').value.trim(),
     orderDate:    document.getElementById('order-date').value,
     deliveryDate: document.getElementById('delivery-date').value,
     deliveryTime: document.getElementById('delivery-time').value,
@@ -1141,6 +1146,7 @@ function resetForm() {
   document.getElementById('delivery-date').value  = tomorrow.toISOString().split('T')[0];
   document.getElementById('delivery-time').value  = '';
   document.getElementById('delivery-address').value = '';
+  document.getElementById('invoice-no').value = '';
   document.getElementById('customer-select').value  = '';
   document.getElementById('new-customer-name').value = '';
   document.getElementById('new-customer-wrap').classList.remove('visible');
@@ -1205,8 +1211,9 @@ function fmtDate(d) {
 const MONTHS = ['January','February','March','April','May','June',
                 'July','August','September','October','November','December'];
 
-const QB_COLS = ['*Customer','*InvoiceDate','*DueDate','Terms','PONumber',
-                 'ItemDescription','ItemQuantity','ItemRate','*ItemAmount','Memo'];
+const QB_COLS = ['*InvoiceNo','*Customer','*InvoiceDate','*DueDate','Terms',
+                 'Location','Memo','Item(Product/Service)','ItemDescription',
+                 'ItemQuantity','ItemRate','*ItemAmount','Service Date','PONumber'];
 
 function populateYearPicker() {
   const sel = document.getElementById('export-year');
@@ -1234,16 +1241,20 @@ function exportXLSX() {
     mo.forEach(function(o) {
       o.items.forEach(function(item, i) {
         rows.push([
-          o.customer,
-          fmtDate(o.orderDate),
-          fmtDate(o.deliveryDate),
-          'Due on receipt',
-          o.poNumber || '',
-          item.desc,
-          1,
-          item.price,
-          i === 0 ? o.total : '',
-          i === 0 ? (o.cardMessage || '') : ''
+          i === 0 ? (o.invoiceNo || '') : '',  // *InvoiceNo — only on first row
+          i === 0 ? o.customer : '',            // *Customer — only on first row
+          i === 0 ? fmtDate(o.orderDate) : '',  // *InvoiceDate — only on first row
+          i === 0 ? fmtDate(o.deliveryDate) : '',// *DueDate — only on first row
+          i === 0 ? 'Due on receipt' : '',       // Terms — only on first row
+          '',                                    // Location — blank
+          i === 0 ? (o.cardMessage || '') : '',  // Memo
+          '',                                    // Item(Product/Service) — blank
+          item.desc,                             // ItemDescription
+          1,                                     // ItemQuantity
+          item.price,                            // ItemRate
+          item.price,                            // *ItemAmount (per line item)
+          fmtDate(o.deliveryDate),               // Service Date
+          i === 0 ? (o.poNumber || '') : ''      // PONumber — only on first row
         ]);
       });
     });
@@ -1560,6 +1571,7 @@ function saveEmailOrder() {
 
   const order = {
     id:           'ord_' + Date.now(),
+    invoiceNo:    document.getElementById('invoice-no').value.trim(),
     orderDate:    new Date().toISOString().split('T')[0],
     deliveryDate: document.getElementById('ep-delivery-date').value,
     deliveryTime: document.getElementById('ep-delivery-time').value,
