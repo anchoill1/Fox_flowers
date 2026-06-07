@@ -3,6 +3,7 @@ const path = require('path');
 const fs   = require('fs');
 const https = require('https');
 const Store = require('electron-store');
+const XLSX  = require('xlsx');
 
 const store = new Store({ encryptionKey: 'foxflowers-2024-secure' });
 
@@ -278,7 +279,91 @@ Invoice with VAT (150 + 13.5% VAT = 170.25 remaining to pay):
   });
 });
 
-// ── Save CSV ──────────────────────────────────────────────────────────────────
+// ── Save XLSX — one tab per month, new file per year ──────────────────────────
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+
+const QB_COLS = ['*InvoiceNo','*Customer','*InvoiceDate','*DueDate','Terms',
+                 'Location','Memo','Item(Product/Service)','ItemDescription',
+                 'ItemQuantity','ItemRate','*ItemAmount','Service Date','PONumber','TaxCode'];
+
+ipcMain.handle('save-xlsx', async (e, { rows, year }) => {
+  const { filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: 'Save QuickBooks Excel File',
+    defaultPath: path.join(app.getPath('documents'), `fox_flowers_${year}.xlsx`),
+    filters: [{ name: 'Excel Files', extensions: ['xlsx'] }]
+  });
+  if (!filePath) return false;
+
+  const wb = XLSX.utils.book_new();
+
+  MONTHS.forEach((monthName, monthIdx) => {
+    const monthStr = String(monthIdx + 1).padStart(2, '0');
+    const monthRows = rows.filter(r => {
+      // InvoiceDate is DD/MM/YYYY — check MM/YYYY
+      const parts = (r.InvoiceDate || '').split('/');
+      return parts[1] === monthStr && parts[2] === String(year);
+    });
+
+    const sheetRows = [QB_COLS];
+    monthRows.forEach(r => {
+      sheetRows.push([
+        r.InvoiceNo     || '',
+        r.Customer      || '',
+        r.InvoiceDate   || '',
+        r.DueDate       || '',
+        r.Terms         || 'Due on receipt',
+        '',                          // Location
+        '',                          // Memo
+        '',                          // Item(Product/Service)
+        r.ItemDescription || '',
+        r.ItemQuantity  || 1,
+        parseFloat(r.ItemRate)   || 0,
+        parseFloat(r.ItemAmount) || 0,
+        r.DueDate       || '',       // Service Date = DueDate
+        r.PONumber      || '',
+        r.TaxCode       || ''
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(sheetRows);
+    ws['!cols'] = [
+      {wch:12},{wch:22},{wch:14},{wch:14},{wch:16},
+      {wch:8},{wch:8},{wch:8},{wch:50},
+      {wch:10},{wch:12},{wch:12},{wch:14},{wch:14},{wch:10}
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, monthName);
+  });
+
+  // Summary sheet
+  const summaryRows = [
+    ['Fox Flowers — ' + year], [],
+    ['Month', 'No. of Invoices', 'Total (€)']
+  ];
+  let yearTotal = 0;
+  MONTHS.forEach((monthName, monthIdx) => {
+    const monthStr = String(monthIdx + 1).padStart(2, '0');
+    const mo = rows.filter(r => {
+      const parts = (r.InvoiceDate || '').split('/');
+      return parts[1] === monthStr && parts[2] === String(year);
+    });
+    const total = mo.reduce((s, r) => s + (parseFloat(r.ItemAmount) || 0), 0);
+    yearTotal += total;
+    summaryRows.push([monthName, mo.length, total]);
+  });
+  summaryRows.push([]);
+  summaryRows.push(['YEAR TOTAL', rows.length, yearTotal]);
+
+  const summaryWs = XLSX.utils.aoa_to_sheet(summaryRows);
+  summaryWs['!cols'] = [{wch:18},{wch:16},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary ' + year);
+
+  XLSX.writeFile(wb, filePath);
+  shell.showItemInFolder(filePath);
+  return true;
+});
+
+// ── Save CSV (kept for backwards compatibility) ───────────────────────────────
 ipcMain.handle('save-csv', async (e, csvContent) => {
   const { filePath } = await dialog.showSaveDialog(mainWindow, {
     title: 'Save QuickBooks CSV',
