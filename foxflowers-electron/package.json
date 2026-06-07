@@ -25,13 +25,24 @@
       "category": "public.app-category.business",
       "icon": "assets/icon.icns",
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ]
     },
     "win": {
       "icon": "assets/icon.ico",
       "target": [
-        { "target": "nsis", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ]
     },
     "nsis": {
@@ -43,8 +54,16 @@
     "dmg": {
       "icon": "assets/icon.icns",
       "contents": [
-        { "x": 130, "y": 220 },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
       ]
     }
   },
@@ -53,6 +72,7 @@
     "electron-builder": "^24.9.1"
   },
   "dependencies": {
-    "electron-store": "^8.1.0"
+    "electron-store": "^8.1.0",
+    "xlsx": "^0.18.5"
   }
 }

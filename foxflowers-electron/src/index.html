@@ -193,7 +193,7 @@
     <div style="display:flex;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px;">
       <span style="font-size:0.9rem;font-weight:500;">Final data</span>
       <span class="badge" id="row-count"></span>
-      <button class="btn btn-outline" onclick="downloadCSV()" style="margin-left:auto;padding:0.4rem 1rem;font-size:0.85rem;">⬇ Save CSV for QuickBooks</button>
+      <button class="btn btn-outline" onclick="downloadXLSX()" style="margin-left:auto;padding:0.4rem 1rem;font-size:0.85rem;">⬇ Save Excel for QuickBooks</button>
     </div>
     <p class="tip" style="margin-bottom:8px;">Click any cell to edit before saving.</p>
     <div style="overflow-x:auto;">
@@ -201,7 +201,7 @@
     </div>
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-outline" onclick="addRow()"     style="font-size:0.85rem;padding:0.4rem 0.9rem;">+ Add row</button>
-      <button class="btn btn-outline" onclick="downloadCSV()" style="font-size:0.85rem;padding:0.4rem 0.9rem;">⬇ Save CSV</button>
+      <button class="btn btn-outline" onclick="downloadXLSX()" style="font-size:0.85rem;padding:0.4rem 0.9rem;">⬇ Save Excel</button>
     </div>
   </div>
 
@@ -538,19 +538,27 @@ function clearAll() {
 }
 
 // ── CSV export (native save dialog) ──────────────────────────────────────────
-async function downloadCSV() {
-  const qbCols = ['*InvoiceNo','*Customer','*InvoiceDate','*DueDate','Terms','Location','Memo',
-    'Item(Product/Service)','ItemDescription','ItemQuantity','ItemRate','*ItemAmount','Service Date'];
-  const keyMap = {
-    '*InvoiceNo':'InvoiceNo','*Customer':'Customer','*InvoiceDate':'InvoiceDate','*DueDate':'DueDate',
-    'Terms':'Terms','Location':'Location','Memo':'Memo','Item(Product/Service)':'Item(Product/Service)',
-    'ItemDescription':'ItemDescription','ItemQuantity':'ItemQuantity','ItemRate':'ItemRate',
-    '*ItemAmount':'ItemAmount','Service Date':'ServiceDate'
-  };
-  const esc  = v => '"' + String(v||'').replace(/"/g,'""') + '"';
-  const lines = [qbCols.map(esc).join(',')];
-  finalRows.forEach(r => lines.push(qbCols.map(col => esc(r[keyMap[col]]||'')).join(',')));
-  await api.saveCSV(lines.join('\r\n'));
+async function downloadXLSX() {
+  if (!finalRows.length) { alert('No rows to export.'); return; }
+  // Work out the year from the first row's InvoiceDate (DD/MM/YYYY)
+  const firstDate = finalRows[0].InvoiceDate || '';
+  const parts     = firstDate.split('/');
+  const year      = parts[2] || new Date().getFullYear().toString();
+  // Pass rows with PONumber and TaxCode included
+  const rows = finalRows.map(r => ({
+    InvoiceNo:       r.InvoiceNo       || '',
+    Customer:        r.Customer        || '',
+    InvoiceDate:     r.InvoiceDate     || '',
+    DueDate:         r.DueDate         || '',
+    Terms:           r.Terms           || 'Due on receipt',
+    ItemDescription: r.ItemDescription || '',
+    ItemQuantity:    r.ItemQuantity    || '1',
+    ItemRate:        r.ItemRate        || '',
+    ItemAmount:      r.ItemAmount      || '',
+    PONumber:        r.PONumber        || '',
+    TaxCode:         r.TaxCode         || ''
+  }));
+  await api.saveXlsx({ rows, year });
 }
 
 boot();
