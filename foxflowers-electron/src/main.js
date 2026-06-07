@@ -115,19 +115,17 @@ ipcMain.handle('mark-done', (e, filenames) => {
   return true;
 });
 
-// ── Helper: today and today+30 in DD/MM/YYYY ─────────────────────────────────
+// ── Today and today+30 in DD/MM/YYYY ─────────────────────────────────────────
 function todayStr() {
   const d = new Date();
   return String(d.getDate()).padStart(2,'0') + '/' +
-         String(d.getMonth()+1).padStart(2,'0') + '/' +
-         d.getFullYear();
+         String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
 }
 function dueDateStr() {
   const d = new Date();
   d.setDate(d.getDate() + 30);
   return String(d.getDate()).padStart(2,'0') + '/' +
-         String(d.getMonth()+1).padStart(2,'0') + '/' +
-         d.getFullYear();
+         String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
 }
 
 // ── Scan invoice ──────────────────────────────────────────────────────────────
@@ -145,100 +143,93 @@ ipcMain.handle('scan-invoice', async (e, { filename, model, apiKey }) => {
 
   const prompt = `You are reading a handwritten invoice or order form for Fox Flowers, a flower shop in Ireland.
 
-Extract the data and return it as a JSON array containing EXACTLY ONE object — one row per invoice, always, no matter how many items are listed.
+Extract the data and return it as a JSON array containing EXACTLY ONE object — one row per invoice, always.
 
 Return ONLY the raw JSON array. No markdown, no code fences, no explanation.
 
-Use these EXACT field names and rules:
+CRITICAL RULES:
+- NEVER invent or guess items, prices, or delivery charges not visible on the invoice
+- NEVER split one invoice into multiple rows
+- Handwritten annotations always override printed text (e.g. handwritten "Delivery 8" overrides printed "TBC")
+
+Use these EXACT field names:
 
 "Customer"
   - The customer or company name being billed
-  - Look across the whole invoice: "Account To", "Deliver To", "Ordered By", "Address", and any reference noted
-  - Common customers:
-    - "Musgrave" anywhere on the invoice → customer is "Musgrave"
-    - Email ending in "@hse.ie" or text mentioning "HSE" → customer is "HSE"
-    - Email ending in "@ucc.ie" or text mentioning "UCC" → customer is "UCC"
-  - For printed email orders, look at "From:", the sender name, or "Dear [name]"
-  - Use your best read of the handwriting; if truly unreadable write "[unclear]"
+  - Look at: "Account To", "Deliver To", "Ordered By", "Address", any reference on the invoice
+  - "Musgrave" anywhere → customer is "Musgrave"
+  - "@hse.ie" email or "HSE" mentioned → customer is "HSE"
+  - "@ucc.ie" email or "UCC" mentioned → customer is "UCC"
+  - For email orders look at From: or sender name
 
 "InvoiceNo"
-  - Look for any order number, invoice number, or PO number written on the invoice
-  - May be labelled "PO#", "P.O.", "Order No", "Inv#", or written in a circled/boxed number
-  - Strip any prefix, return just the number (e.g. "PO# 10540802" → "10540802")
-  - If not visible, leave blank ""
+  - Any PO#, order number, or invoice number visible
+  - Leave blank if not visible
 
 "InvoiceDate"
-  - Always set to today's date: ${today}
+  - Always use today: ${today}
 
 "DueDate"
-  - Always set to: ${dueDate}
+  - Always use: ${dueDate}
 
 "Terms"
-  - Always set to exactly: "Due on receipt"
+  - Always: "Due on receipt"
 
 "ItemDescription"
-  - Format: [what was ordered and price]; [Delivery and price if charged] — [who it went to], [who ordered it if different from recipient]
-  - WHAT WAS ORDERED:
-    - The product type and price: e.g. "Hand-tied Bouquet 75.00", "Arrangement 150.00", "Plant 45.00"
-    - Product abbreviations: "H/T" or "HT" = Hand-tied Bouquet
-    - CURRENCY SYMBOLS: € £ $ G C before or after a number all mean euros — strip symbol, keep number
-    - "G75" or "C75" in handwriting = €75
-  - DELIVERY:
-    - ONLY include if a delivery charge is actually written on the invoice
-    - Look for any number next to the word "DELIVERY" on the form — even just "8" beside the delivery line means €8
-    - Handwritten numbers beside "DELIVERY" always override printed "TBC" or blank
-    - Format: "Delivery 8.00"
-  - WHO IT WENT TO (always include):
-    - "FAO [name]" means For the Attention Of — that person is the recipient
-    - "DELIVER TO" or "ACCOUNT TO" fields identify the recipient and their company
-    - Include name and company/location e.g. "Julie Durel, Fiachra Restaurant Douglas"
-  - WHO ORDERED IT (only include if different from recipient):
-    - Found in "Ordered By", "Invoice [name]", or signature/address at bottom of form
-    - e.g. "ordered by Julie Durel Staff, Musgrave"
+  - Combine everything into ONE string using this format:
+    [item name and price]; [delivery and price if charged] — [who it went to], [who ordered it if different]
+  - ITEM NAME RULES:
+    - H/T, HT, H11, H1T, or anything resembling those = "Hand-tied Bouquet"
+    - Always include the price of the item next to it
+    - CURRENCY: € £ $ G C before or after a number all mean euros — strip the symbol
+    - "G75" = €75 = 75.00, "C75" = €75 = 75.00, "€75" = 75.00
+    - If "+VAT" is written next to a price, note it: "Hand-tied Bouquet 75.00 +VAT"
+  - DELIVERY RULES:
+    - Only include delivery if a number is actually written next to "DELIVERY" on the form
+    - A plain number beside the DELIVERY line means that amount in euros e.g. "8" = Delivery 8.00
+    - Handwritten delivery amount overrides any printed "TBC"
+    - "+7 Dly" or "Dly 7" or "DLY 7" all mean Delivery 7.00
+  - WHO IT WENT TO:
+    - "FAO [name]" = For the Attention Of — that person is the recipient
+    - Use "DELIVER TO" or "ACCOUNT TO" fields for recipient name and location
+  - WHO ORDERED IT:
+    - Only include if different from recipient
+    - Found in "Ordered By", "Invoice [name]", or address/signature at bottom
   - Examples:
     - "Hand-tied Bouquet 75.00; Delivery 8.00 — Julie Durel, Fiachra Restaurant Douglas, ordered by Julie Durel Staff Musgrave"
     - "Bouquet 60.00; Delivery 7.00 — Margaret McKiernan, Mercy Hospital, ordered by Sinead Goggin"
     - "Reception Array 45.00 — Citco"
-    - "Altar piece 150.00; Windowsills x8 65.00ea; Delivery 60.00 — Sacred Heart Church, ordered by Julianna Crowley HSE"
-  - Never split into multiple rows
+    - "Hand-tied Bouquet 60.00; Bright colours 7.00 — FAO Grainne, Bishopstown Comm School"
 
 "ItemQuantity"
-  - Always set to 1 (we combine everything into one row)
+  - Always 1
 
 "ItemRate"
-  - The subtotal of ALL items combined including delivery
-  - CURRENCY SYMBOLS: € £ $ G C written before or after a number all mean euros — always strip them
-    - "€100", "G100", "C100", "£100" all mean 100.00
-  - Add up all items + delivery to get this number
-  - Example: 2 x 100.00 + delivery 7.00 = 207.00
-  - Example: 45.00 + delivery 8.00 = 53.00
-  - If a TOTAL is written on the invoice, use that
-  - Format as a plain number, no symbols (e.g. "207.00")
-  - Two decimal places always
+  - The total of ALL items plus delivery
+  - CURRENCY: € £ $ G C before or after a number = euros, strip the symbol
+  - "G75" = 75.00, "C83" = 83.00
+  - Add items + delivery yourself if no total is written
+  - If "+VAT" is on the invoice, use the VAT-inclusive total (REMAINING TO PAY or price x 1.135)
+  - Format: plain number, two decimal places e.g. "83.00"
 
 "ItemAmount"
-  - Same value as ItemRate (total before any VAT)
-  - Format as a plain number, no symbols
-  - Two decimal places always
+  - Same value as ItemRate
+  - Format: plain number, two decimal places
 
 "TaxCode"
-  - If "+VAT", "+vat", or "VAT" is written next to any price on the invoice, set this to "13.5% S"
-  - Otherwise leave blank ""
-  - When VAT is noted, the ItemAmount should be the VAT-inclusive total (e.g. REMAINING TO PAY, or price x 1.135)
-
-CRITICAL RULES TO AVOID MISTAKES:
-  - NEVER invent items, prices, or delivery charges that are not clearly visible on the invoice
-  - If a field is blank or unreadable, leave it blank — do not guess or fill in imaginary values
-  - Only include delivery in ItemDescription if a delivery charge is actually written on the invoice
-  - The description should only contain what is literally written under "Flowers and Decoration Required" or equivalent
+  - If "+VAT", "+vat", or "VAT" is written on the invoice: "13.5% S"
+  - Otherwise: ""
 
 Examples of correct output:
 
-Handwritten invoice with delivery (H/T = Hand-tied Bouquet, G75 = €75, delivery 8 written next to DELIVERY line):
+Handwritten (H/T = Hand-tied Bouquet, G75 = €75, delivery 8 beside DELIVERY line, total 83):
 [{"Customer":"Musgrave","InvoiceNo":"","InvoiceDate":"${today}","DueDate":"${dueDate}","Terms":"Due on receipt","ItemDescription":"Hand-tied Bouquet 75.00; Delivery 8.00 — Julie Durel, Fiachra Restaurant Douglas, ordered by Julie Durel Staff Musgrave","ItemQuantity":"1","ItemRate":"83.00","ItemAmount":"83.00","TaxCode":""}]
 
-Email order with 2 items and delivery:
-[{"Customer":"UCC","InvoiceNo":"10540802","InvoiceDate":"${today}","DueDate":"${dueDate}","Terms":"Due on receipt","ItemDescription":"Hand-tied Bouquet x2 100.00ea; Delivery 7.00 — ordered by Mary McNicholas, for Prof Aideen Sullivan and Mary McNicholas","ItemQuantity":"1","ItemRate":"207.00","ItemAmount":"207.00","TaxCode":""}]`;
+Email order (2 items @ €100ea + Dly 7 = 207 total):
+[{"Customer":"UCC","InvoiceNo":"10540802","InvoiceDate":"${today}","DueDate":"${dueDate}","Terms":"Due on receipt","ItemDescription":"Hand-tied Bouquet x2 100.00ea; Delivery 7.00 — Prof Aideen Sullivan and Mary McNicholas, ordered by Mary McNicholas UCC","ItemQuantity":"1","ItemRate":"207.00","ItemAmount":"207.00","TaxCode":""}]
+
+Invoice with VAT (150 + 13.5% VAT = 170.25 remaining to pay):
+[{"Customer":"UCC","InvoiceNo":"","InvoiceDate":"${today}","DueDate":"${dueDate}","Terms":"Due on receipt","ItemDescription":"Vibrant Wow Colours arrangement 150.00 +VAT; pedestal stand — Westgate, ordered by Catherine Nevin UCC","ItemQuantity":"1","ItemRate":"170.25","ItemAmount":"170.25","TaxCode":"13.5% S"}]`;
 
   const body = JSON.stringify({
     model: model || 'claude-sonnet-4-6',
