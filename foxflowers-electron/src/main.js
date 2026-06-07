@@ -177,20 +177,29 @@ Use these EXACT field names and rules:
   - Always set to exactly: "Due on receipt"
 
 "ItemDescription"
-  - List EVERY item on the invoice with its price, one per line using semicolons to separate
-  - Format each item as: [item name] [quantity if shown] [price]
-  - CURRENCY SYMBOLS: € £ $ G C written before or after a number all mean euros — strip the symbol, keep the number
-    - "€45", "G45", "C45", "45€", "£45" all mean 45.00 euros
-  - CRITICAL RULE — handwritten annotations always override printed text:
-    - If the printed invoice says "Delivery Fee: TBC" but a handwritten number appears next to "Delivery" → use the handwritten number
-    - If the printed invoice says one price but a handwritten number is written beside it → use the handwritten number
-    - Always look for handwritten corrections or additions on top of the printed form
-  - If delivery is charged, include it as a line item too: "Delivery [amount]"
-  - Example: "Hand-tied Bouquet x2 100.00ea; Delivery 7.00"
-  - Example: "Reception Array 45.00; Delivery 8.00"
-  - Example: "Altar piece x1 150.00; Windowsills x8 65.00ea; Side table x1; Delivery 60.00"
-  - Product abbreviations: "H/T" or "HT" = Hand-tied Bouquet
-  - Who ordered it and who it went to should also be included at the end
+  - Format: [what was ordered and price]; [Delivery and price if charged] — [who it went to], [who ordered it if different from recipient]
+  - WHAT WAS ORDERED:
+    - The product type and price: e.g. "Hand-tied Bouquet 75.00", "Arrangement 150.00", "Plant 45.00"
+    - Product abbreviations: "H/T" or "HT" = Hand-tied Bouquet
+    - CURRENCY SYMBOLS: € £ $ G C before or after a number all mean euros — strip symbol, keep number
+    - "G75" or "C75" in handwriting = €75
+  - DELIVERY:
+    - ONLY include if a delivery charge is actually written on the invoice
+    - Look for any number next to the word "DELIVERY" on the form — even just "8" beside the delivery line means €8
+    - Handwritten numbers beside "DELIVERY" always override printed "TBC" or blank
+    - Format: "Delivery 8.00"
+  - WHO IT WENT TO (always include):
+    - "FAO [name]" means For the Attention Of — that person is the recipient
+    - "DELIVER TO" or "ACCOUNT TO" fields identify the recipient and their company
+    - Include name and company/location e.g. "Julie Durel, Fiachra Restaurant Douglas"
+  - WHO ORDERED IT (only include if different from recipient):
+    - Found in "Ordered By", "Invoice [name]", or signature/address at bottom of form
+    - e.g. "ordered by Julie Durel Staff, Musgrave"
+  - Examples:
+    - "Hand-tied Bouquet 75.00; Delivery 8.00 — Julie Durel, Fiachra Restaurant Douglas, ordered by Julie Durel Staff Musgrave"
+    - "Bouquet 60.00; Delivery 7.00 — Margaret McKiernan, Mercy Hospital, ordered by Sinead Goggin"
+    - "Reception Array 45.00 — Citco"
+    - "Altar piece 150.00; Windowsills x8 65.00ea; Delivery 60.00 — Sacred Heart Church, ordered by Julianna Crowley HSE"
   - Never split into multiple rows
 
 "ItemQuantity"
@@ -225,8 +234,8 @@ CRITICAL RULES TO AVOID MISTAKES:
 
 Examples of correct output:
 
-Handwritten invoice with delivery:
-[{"Customer":"Musgrave","InvoiceNo":"","InvoiceDate":"${today}","DueDate":"${dueDate}","Terms":"Due on receipt","ItemDescription":"Hand-tied Bouquet x1 75.00; Delivery 8.00 — ordered by Julie Durel, for Teresa at Fiachra Restaurant Douglas","ItemQuantity":"1","ItemRate":"83.00","ItemAmount":"83.00","TaxCode":""}]
+Handwritten invoice with delivery (H/T = Hand-tied Bouquet, G75 = €75, delivery 8 written next to DELIVERY line):
+[{"Customer":"Musgrave","InvoiceNo":"","InvoiceDate":"${today}","DueDate":"${dueDate}","Terms":"Due on receipt","ItemDescription":"Hand-tied Bouquet 75.00; Delivery 8.00 — Julie Durel, Fiachra Restaurant Douglas, ordered by Julie Durel Staff Musgrave","ItemQuantity":"1","ItemRate":"83.00","ItemAmount":"83.00","TaxCode":""}]
 
 Email order with 2 items and delivery:
 [{"Customer":"UCC","InvoiceNo":"10540802","InvoiceDate":"${today}","DueDate":"${dueDate}","Terms":"Due on receipt","ItemDescription":"Hand-tied Bouquet x2 100.00ea; Delivery 7.00 — ordered by Mary McNicholas, for Prof Aideen Sullivan and Mary McNicholas","ItemQuantity":"1","ItemRate":"207.00","ItemAmount":"207.00","TaxCode":""}]`;
