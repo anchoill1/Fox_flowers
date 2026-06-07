@@ -181,6 +181,10 @@ Use these EXACT field names and rules:
   - Format each item as: [item name] [quantity if shown] [price]
   - CURRENCY SYMBOLS: € £ $ G C written before or after a number all mean euros — strip the symbol, keep the number
     - "€45", "G45", "C45", "45€", "£45" all mean 45.00 euros
+  - CRITICAL RULE — handwritten annotations always override printed text:
+    - If the printed invoice says "Delivery Fee: TBC" but a handwritten number appears next to "Delivery" → use the handwritten number
+    - If the printed invoice says one price but a handwritten number is written beside it → use the handwritten number
+    - Always look for handwritten corrections or additions on top of the printed form
   - If delivery is charged, include it as a line item too: "Delivery [amount]"
   - Example: "Hand-tied Bouquet x2 100.00ea; Delivery 7.00"
   - Example: "Reception Array 45.00; Delivery 8.00"
@@ -209,7 +213,15 @@ Use these EXACT field names and rules:
   - Two decimal places always
 
 "TaxCode"
-  - Leave blank "" — VAT is handled separately on import
+  - If "+VAT", "+vat", or "VAT" is written next to any price on the invoice, set this to "13.5% S"
+  - Otherwise leave blank ""
+  - When VAT is noted, the ItemAmount should be the VAT-inclusive total (e.g. REMAINING TO PAY, or price x 1.135)
+
+CRITICAL RULES TO AVOID MISTAKES:
+  - NEVER invent items, prices, or delivery charges that are not clearly visible on the invoice
+  - If a field is blank or unreadable, leave it blank — do not guess or fill in imaginary values
+  - Only include delivery in ItemDescription if a delivery charge is actually written on the invoice
+  - The description should only contain what is literally written under "Flowers and Decoration Required" or equivalent
 
 Examples of correct output:
 
