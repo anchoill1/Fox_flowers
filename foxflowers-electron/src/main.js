@@ -4,30 +4,20 @@ const fs   = require('fs');
 const https = require('https');
 const Store = require('electron-store');
 
-// ── Persistent settings ───────────────────────────────────────────────────────
-const store = new Store({
-  encryptionKey: 'foxflowers-2024-secure'
-});
+const store = new Store({ encryptionKey: 'foxflowers-2024-secure' });
 
-// ── Folders ───────────────────────────────────────────────────────────────────
 const uploadsDir = path.join(app.getPath('userData'), 'uploads');
 const archiveDir = path.join(uploadsDir, 'archived');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 if (!fs.existsSync(archiveDir)) fs.mkdirSync(archiveDir, { recursive: true });
 
-// Track which filenames the UI has marked as done
 let doneFilenames = [];
-
 let mainWindow;
 
 function createWindow() {
   nativeTheme.themeSource = 'light';
-
   mainWindow = new BrowserWindow({
-    width:  1100,
-    height: 820,
-    minWidth: 800,
-    minHeight: 600,
+    width: 1100, height: 820, minWidth: 800, minHeight: 600,
     title: 'Fox Flowers — Invoice Scanner',
     backgroundColor: '#f5f2ee',
     webPreferences: {
@@ -42,17 +32,11 @@ function createWindow() {
       autoHideMenuBar: true
     })
   });
-
-  // ── Archive done photos when the window is about to close ──────────────────
-  mainWindow.on('close', () => {
-    archiveDonePhotos();
-  });
-
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  mainWindow.on('close', () => archiveDonePhotos());
 }
 
 function archiveDonePhotos() {
-  // Archive ALL image files currently in uploads — everything gets archived on close
   const exts = new Set(['.jpg','.jpeg','.png','.gif','.webp','.heic','.heif']);
   let files = [];
   try {
@@ -61,21 +45,16 @@ function archiveDonePhotos() {
       return fs.statSync(full).isFile() && exts.has(path.extname(f).toLowerCase());
     });
   } catch(e) { return; }
-
   for (const file of files) {
-    const src  = path.join(uploadsDir, file);
-    let   dest = path.join(archiveDir, file);
+    const src = path.join(uploadsDir, file);
+    let dest  = path.join(archiveDir, file);
     try {
-      // If a file with same name already exists in archive, add timestamp
       if (fs.existsSync(dest)) {
-        const ext  = path.extname(file);
-        const base = path.basename(file, ext);
+        const ext = path.extname(file), base = path.basename(file, ext);
         dest = path.join(archiveDir, `${base}_${Date.now()}${ext}`);
       }
       fs.renameSync(src, dest);
-    } catch(e) {
-      console.error('Archive error for', file, e.message);
-    }
+    } catch(e) { console.error('Archive error', file, e.message); }
   }
   doneFilenames = [];
 }
@@ -84,21 +63,12 @@ app.whenReady().then(() => {
   createWindow();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
-
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 
-// ── IPC: settings ─────────────────────────────────────────────────────────────
-ipcMain.handle('get-setting', (e, key)        => store.get(key));
-ipcMain.handle('set-setting', (e, key, value) => { store.set(key, value); return true; });
-ipcMain.handle('get-uploads-dir', ()          => uploadsDir);
+ipcMain.handle('get-setting',     (e, key)        => store.get(key));
+ipcMain.handle('set-setting',     (e, key, value) => { store.set(key, value); return true; });
+ipcMain.handle('get-uploads-dir', ()              => uploadsDir);
 
-// ── IPC: UI tells us which files are done (called after each successful scan) ─
-ipcMain.handle('mark-done', (e, filenames) => {
-  doneFilenames = [...new Set([...doneFilenames, ...filenames])];
-  return true;
-});
-
-// ── IPC: list saved images (only from uploads root, not archived subfolder) ───
 ipcMain.handle('list-images', () => {
   const exts = new Set(['.jpg','.jpeg','.png','.gif','.webp','.heic','.heif']);
   try {
@@ -109,34 +79,30 @@ ipcMain.handle('list-images', () => {
       })
       .map(f => {
         const full = path.join(uploadsDir, f);
-        const stat = fs.statSync(full);
-        return { filename: f, path: full, size: stat.size, mtime: stat.mtimeMs };
+        return { filename: f, path: full, mtime: fs.statSync(full).mtimeMs };
       })
       .sort((a, b) => b.mtime - a.mtime);
   } catch(e) { return []; }
 });
 
-// ── IPC: save uploaded image to disk ─────────────────────────────────────────
 ipcMain.handle('save-image', (e, { name, base64, mimeType }) => {
-  const ext  = path.extname(name) || '.jpg';
-  const base = path.basename(name, ext).replace(/[^a-zA-Z0-9_\-]/g, '_').slice(0, 80);
+  const ext      = path.extname(name) || '.jpg';
+  const base     = path.basename(name, ext).replace(/[^a-zA-Z0-9_\-]/g, '_').slice(0, 80);
   const filename = `${Date.now()}_${base}${ext}`;
   const fullPath = path.join(uploadsDir, filename);
-  fs.writeFileSync(fullPath, Buffer.from(base64, 'base64'));
+  const raw = base64.includes(',') ? base64.split(',')[1] : base64;
+  fs.writeFileSync(fullPath, Buffer.from(raw, 'base64'));
   return { filename, path: fullPath };
 });
 
-// ── IPC: delete image ─────────────────────────────────────────────────────────
 ipcMain.handle('delete-image', (e, filename) => {
   const safe = path.basename(filename);
   const full = path.join(uploadsDir, safe);
   if (fs.existsSync(full)) fs.unlinkSync(full);
-  // Remove from done list too
   doneFilenames = doneFilenames.filter(f => f !== filename);
   return true;
 });
 
-// ── IPC: read image as base64 ─────────────────────────────────────────────────
 ipcMain.handle('read-image-base64', (e, filename) => {
   const safe = path.basename(filename);
   const full = path.join(uploadsDir, safe);
@@ -144,52 +110,136 @@ ipcMain.handle('read-image-base64', (e, filename) => {
   return fs.readFileSync(full).toString('base64');
 });
 
-// ── IPC: call Anthropic API ───────────────────────────────────────────────────
+ipcMain.handle('mark-done', (e, filenames) => {
+  doneFilenames = [...new Set([...doneFilenames, ...filenames])];
+  return true;
+});
+
+// ── Helper: today and today+30 in DD/MM/YYYY ─────────────────────────────────
+function todayStr() {
+  const d = new Date();
+  return String(d.getDate()).padStart(2,'0') + '/' +
+         String(d.getMonth()+1).padStart(2,'0') + '/' +
+         d.getFullYear();
+}
+function dueDateStr() {
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  return String(d.getDate()).padStart(2,'0') + '/' +
+         String(d.getMonth()+1).padStart(2,'0') + '/' +
+         d.getFullYear();
+}
+
+// ── Scan invoice ──────────────────────────────────────────────────────────────
 ipcMain.handle('scan-invoice', async (e, { filename, model, apiKey }) => {
   const ext = path.extname(filename).toLowerCase();
-  const mimeMap = { '.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.gif':'image/gif','.webp':'image/webp' };
+  const mimeMap = {
+    '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.png':'image/png',
+    '.gif':'image/gif',  '.webp':'image/webp', '.heic':'image/jpeg', '.heif':'image/jpeg'
+  };
   const mediaType = mimeMap[ext] || 'image/jpeg';
   const imgBase64 = fs.readFileSync(path.join(uploadsDir, path.basename(filename))).toString('base64');
 
-  const prompt = `You are helping a flower shop called Fox Flowers read their handwritten order forms and invoices.
+  const today   = todayStr();
+  const dueDate = dueDateStr();
 
-Look at this handwritten invoice or order form and extract the data into a JSON array ready to import into QuickBooks Online.
+  const prompt = `You are reading a handwritten invoice or order form for Fox Flowers, a flower shop in Ireland.
 
-IMPORTANT: Always return exactly ONE row per invoice, no matter how many items are listed on it.
+Extract the data and return it as a JSON array containing EXACTLY ONE object — one row per invoice, always, no matter how many items are listed.
 
-Return ONLY a valid JSON array containing a single object with these EXACT JSON keys:
-- "InvoiceNo": invoice or order number if visible, otherwise leave blank
-- "Customer": the name of the person or company being billed
-- "InvoiceDate": the order or invoice date in DD/MM/YYYY format
-- "DueDate": delivery date if shown in DD/MM/YYYY format, otherwise leave blank
-- "Terms": payment terms if shown (e.g. "Due on receipt"), otherwise "Due on receipt"
-- "Memo": delivery time, special instructions, address or any notes
-- "ItemDescription": list ALL items ordered in one single comma-separated description. Include who the order is for and who ordered it if a company. Example: "Vibrant wedding bouquet, cow rug centrepiece, smudge bundle for Westside Hotel, ordered by Catherine Nevin"
-- "ItemQuantity": total quantity of all items combined, otherwise 1
-- "ItemRate": leave blank
-- "ItemAmount": the TOTAL or REMAINING TO PAY amount for the whole invoice
+Return ONLY the raw JSON array. No markdown, no code fences, no explanation.
 
-Never split one invoice into multiple rows. One invoice = one row, always.
-Return ONLY the raw JSON array. No markdown. No code fences. No explanation.`;
+Use these EXACT field names and rules:
+
+"Customer"
+  - The customer or company name being billed
+  - Look across the whole invoice: "Account To", "Deliver To", "Ordered By", "Address", and any reference noted
+  - Common customers:
+    - "Musgrave" anywhere on the invoice → customer is "Musgrave"
+    - Email ending in "@hse.ie" or text mentioning "HSE" → customer is "HSE"
+    - Email ending in "@ucc.ie" or text mentioning "UCC" → customer is "UCC"
+  - For printed email orders, look at "From:", the sender name, or "Dear [name]"
+  - Use your best read of the handwriting; if truly unreadable write "[unclear]"
+
+"InvoiceNo"
+  - Look for any order number, invoice number, or PO number written on the invoice
+  - May be labelled "PO#", "P.O.", "Order No", "Inv#", or written in a circled/boxed number
+  - Strip any prefix, return just the number (e.g. "PO# 10540802" → "10540802")
+  - If not visible, leave blank ""
+
+"InvoiceDate"
+  - Always set to today's date: ${today}
+
+"DueDate"
+  - Always set to: ${dueDate}
+
+"Terms"
+  - Always set to exactly: "Due on receipt"
+
+"ItemDescription"
+  - List EVERY item on the invoice with its price, one per line using semicolons to separate
+  - Format each item as: [item name] [quantity if shown] [price]
+  - CURRENCY SYMBOLS: € £ $ G C written before or after a number all mean euros — strip the symbol, keep the number
+    - "€45", "G45", "C45", "45€", "£45" all mean 45.00 euros
+  - If delivery is charged, include it as a line item too: "Delivery [amount]"
+  - Example: "Hand-tied Bouquet x2 100.00ea; Delivery 7.00"
+  - Example: "Reception Array 45.00; Delivery 8.00"
+  - Example: "Altar piece x1 150.00; Windowsills x8 65.00ea; Side table x1; Delivery 60.00"
+  - Product abbreviations: "H/T" or "HT" = Hand-tied Bouquet
+  - Who ordered it and who it went to should also be included at the end
+  - Never split into multiple rows
+
+"ItemQuantity"
+  - Always set to 1 (we combine everything into one row)
+
+"ItemRate"
+  - The subtotal of ALL items combined including delivery
+  - CURRENCY SYMBOLS: € £ $ G C written before or after a number all mean euros — always strip them
+    - "€100", "G100", "C100", "£100" all mean 100.00
+  - Add up all items + delivery to get this number
+  - Example: 2 x 100.00 + delivery 7.00 = 207.00
+  - Example: 45.00 + delivery 8.00 = 53.00
+  - If a TOTAL is written on the invoice, use that
+  - Format as a plain number, no symbols (e.g. "207.00")
+  - Two decimal places always
+
+"ItemAmount"
+  - Same value as ItemRate (total before any VAT)
+  - Format as a plain number, no symbols
+  - Two decimal places always
+
+"TaxCode"
+  - Leave blank "" — VAT is handled separately on import
+
+Examples of correct output:
+
+Handwritten invoice with delivery:
+[{"Customer":"Musgrave","InvoiceNo":"","InvoiceDate":"${today}","DueDate":"${dueDate}","Terms":"Due on receipt","ItemDescription":"Hand-tied Bouquet x1 75.00; Delivery 8.00 — ordered by Julie Durel, for Teresa at Fiachra Restaurant Douglas","ItemQuantity":"1","ItemRate":"83.00","ItemAmount":"83.00","TaxCode":""}]
+
+Email order with 2 items and delivery:
+[{"Customer":"UCC","InvoiceNo":"10540802","InvoiceDate":"${today}","DueDate":"${dueDate}","Terms":"Due on receipt","ItemDescription":"Hand-tied Bouquet x2 100.00ea; Delivery 7.00 — ordered by Mary McNicholas, for Prof Aideen Sullivan and Mary McNicholas","ItemQuantity":"1","ItemRate":"207.00","ItemAmount":"207.00","TaxCode":""}]`;
 
   const body = JSON.stringify({
-    model: model || 'claude-sonnet-4-5-20250929',
+    model: model || 'claude-sonnet-4-6',
     max_tokens: 1000,
-    messages: [{ role: 'user', content: [
-      { type: 'image', source: { type: 'base64', media_type: mediaType, data: imgBase64 } },
-      { type: 'text', text: prompt }
-    ]}]
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: mediaType, data: imgBase64 } },
+        { type: 'text',  text: prompt }
+      ]
+    }]
   });
 
   return new Promise((resolve, reject) => {
     const req = https.request({
       hostname: 'api.anthropic.com',
-      path: '/v1/messages',
-      method: 'POST',
+      path:     '/v1/messages',
+      method:   'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(body),
-        'x-api-key': apiKey,
+        'Content-Type':      'application/json',
+        'Content-Length':    Buffer.byteLength(body),
+        'x-api-key':         apiKey,
         'anthropic-version': '2023-06-01'
       }
     }, (res) => {
@@ -202,10 +252,12 @@ Return ONLY the raw JSON array. No markdown. No code fences. No explanation.`;
           const textBlock = Array.isArray(parsed.content) && parsed.content.find(b => b.type === 'text');
           if (!textBlock) return reject(new Error('No text in response'));
           const aiText = textBlock.text.trim();
-          const clean  = aiText.replace(/^```[\w]*\n?/m,'').replace(/```$/m,'').trim();
+          const clean  = aiText.replace(/^```[a-z]*/m, '').replace(/```/g, '').trim();
           const rows   = JSON.parse(clean);
           resolve(Array.isArray(rows) ? rows : [rows]);
-        } catch(e) { reject(new Error('Could not parse response: ' + data.slice(0, 100))); }
+        } catch(e) {
+          reject(new Error('Could not parse AI response: ' + data.slice(0, 120)));
+        }
       });
     });
     req.on('error', e => reject(new Error('Network error: ' + e.message)));
@@ -214,7 +266,7 @@ Return ONLY the raw JSON array. No markdown. No code fences. No explanation.`;
   });
 });
 
-// ── IPC: save CSV ─────────────────────────────────────────────────────────────
+// ── Save CSV ──────────────────────────────────────────────────────────────────
 ipcMain.handle('save-csv', async (e, csvContent) => {
   const { filePath } = await dialog.showSaveDialog(mainWindow, {
     title: 'Save QuickBooks CSV',
